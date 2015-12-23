@@ -1,0 +1,128 @@
+--- mt_rfkill.c	2013-03-06 11:09:31.000000000 +0200
++++ mt_rfkill.c.iq256	2012-11-28 12:06:36.000000000 +0200
+@@ -36,7 +36,12 @@
+ extern void mt_wifi_power_off(void);
+ extern int mt_wifi_suspend(pm_message_t state);
+ extern int mt_wifi_resume(pm_message_t state);
+-
++#ifdef BCM_GPS_SUPPORT
++extern void brcm_gps_power_on(void);
++extern void brcm_gps_power_off(void);
++extern int brcm_gps_suspend(pm_message_t state);
++extern int brcm_gps_resume(pm_message_t state);
++#endif
+ #if defined(CONFIG_WIMAX_MT71X8)
+ extern void mt7118_wimax_power_on(void);
+ extern void mt7118_wimax_power_off(void);
+@@ -75,8 +80,33 @@
+     .power_on = mt_bt_power_on,
+     .power_off = mt_bt_power_off
+ };
++#else //[wj]add brcm b20710 driver
++#ifdef BCM_BT_SUPPORT
++static struct mt_rfdev bt = {
++    .name = "BT",
++    .state = RFDEV_POWER_OFF,
++    .lock = __SPIN_LOCK_UNLOCKED(bt.lock),
++    .suspend = brcm_bt_suspend,
++    .resume = brcm_bt_resume,
++    .power_on = brcm_bt_power_on,
++    .power_off = brcm_bt_power_off
++};
++#endif
+ #endif
+ 
++#ifdef BCM_GPS_SUPPORT
++static struct mt_rfdev gps = {
++    .name = "GPS",
++    .state = RFDEV_POWER_OFF,
++    .lock = __SPIN_LOCK_UNLOCKED(gps.lock),
++    .suspend = brcm_gps_suspend,
++    .resume = brcm_gps_resume,
++    .power_on = brcm_gps_power_on,
++    .power_off = brcm_gps_power_off
++};
++#endif
++
++
+ static struct mt_rfdev wlan = {
+     .name = "WLAN",
+     .state = RFDEV_POWER_OFF,
+@@ -364,6 +394,33 @@
+         rfkill_destroy(rfk);
+ #endif
+     }
++ #else
++//[wj]add brcm b20710 driver
++#ifdef BCM_BT_SUPPORT
++    rfkill_restore_states();
++
++    /* default to bluetooth off */
++    mt_rfkill_power(&bt, 0);
++
++
++    rfk = rfkill_alloc("bcm4330_BT", &pdev->dev, RFKILL_TYPE_BLUETOOTH, &mt_rfkill_ops, &bt);
++    if (!rfk)
++    {
++        printk(KERN_ALERT "rfkill_alloc failed for BT\n");
++        return -ENOMEM;
++    }
++
++    rfkill_init_sw_state(rfk, true);
++
++    rc = rfkill_register(rfk);
++
++    if (rc == 0) {
++        bt.rfkill = rfk;
++    } else {
++
++        rfkill_destroy(rfk);
++    }
++#endif       
+ #endif
+ 
+ #if defined(MTK_WLAN_SUPPORT)
+@@ -392,7 +449,7 @@
+         return -ENOMEM;
+     }
+ 
+-    rfkill_init_sw_state(rfk, true);
++    rfkill_init_sw_state(rfk, false);
+ #endif
+     rc = rfkill_register(rfk);
+     if (rc == 0) {
+@@ -454,6 +511,34 @@
+     }
+ #endif
+ 
++    rfkill_restore_states();
++
++#ifdef BCM_GPS_SUPPORT
++
++    /* default to bluetooth off */
++    mt_rfkill_power(&gps, 0);
++
++    rfk = rfkill_alloc("bcm4751", &pdev->dev, RFKILL_TYPE_GPS, &mt_rfkill_ops, &gps);
++    if (!rfk)
++    {
++        printk(KERN_ALERT "rfkill_alloc failed for GPS\n");
++        return -ENOMEM;
++    }
++
++    rfkill_init_sw_state(rfk, true);
++
++    rc = rfkill_register(rfk);
++
++    if (rc == 0) {
++        gps.rfkill = rfk;
++        #ifdef RFKILL_PM_TEST
++        rc = device_create_file(&rfk->dev, &dev_attr_pmtst);
++        #endif
++    } else {
++
++        rfkill_destroy(rfk);
++    }
++#endif
+     return rc;
+ }
+ 

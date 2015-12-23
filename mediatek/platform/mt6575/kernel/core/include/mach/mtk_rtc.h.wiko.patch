@@ -1,0 +1,33 @@
+--- mtk_rtc.h	2012-11-13 05:55:44.000000000 +0200
++++ mtk_rtc.h.wiko	2012-11-14 04:20:28.000000000 +0200
+@@ -1,4 +1,18 @@
+-
++/*
++ * Copyright (C) 2010 MediaTek, Inc.
++ *
++ * Author: Terry Chang <terry.chang@mediatek.com>
++ *
++ * This software is licensed under the terms of the GNU General Public
++ * License version 2, as published by the Free Software Foundation, and
++ * may be copied, distributed, and modified under those terms.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ */
+ 
+ #ifndef _MTK_RTC_H_
+ #define _MTK_RTC_H_
+@@ -18,6 +32,10 @@
+ 
+ #ifdef CONFIG_MTK_RTC
+ 
++/*
++ * NOTE:
++ * 1. RTC_GPIO always exports 32K enabled by some user even if the phone is powered off
++ */
+ extern void rtc_gpio_enable_32k(rtc_gpio_user_t user);
+ extern void rtc_gpio_disable_32k(rtc_gpio_user_t user);
+ 

@@ -1,0 +1,21 @@
+diff -ruN wireless/sme.c wireless.orig/sme.c
+--- wireless/sme.c	2012-11-26 04:17:32.000000000 +0200
++++ wireless.orig/sme.c	2013-07-28 10:39:12.000000000 +0300
+@@ -761,14 +761,9 @@
+ 	ASSERT_WDEV_LOCK(wdev);
+ 
+ #ifndef CONFIG_CFG80211_ALLOW_RECONNECT
+-//Ivan added	
+-	if (wdev->sme_state == CFG80211_SME_CONNECTING )
+-	    goto conn;
+-	
+-	if (wdev->sme_state != CFG80211_SME_IDLE )
+-		return -EALREADY;	
+-//Ivan added
+-conn:
++	if (wdev->sme_state != CFG80211_SME_IDLE)
++		return -EALREADY;
++
+ 	if (WARN_ON(wdev->connect_keys)) {
+ #else
+ 	if (wdev->connect_keys) {

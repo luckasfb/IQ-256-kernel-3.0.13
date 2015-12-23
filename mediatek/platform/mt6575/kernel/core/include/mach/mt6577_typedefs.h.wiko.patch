@@ -1,0 +1,19 @@
+--- mt6575_typedefs.h	2012-11-13 05:56:00.000000000 +0200
++++ mt6577_typedefs.h.wiko	2012-11-14 04:20:28.000000000 +0200
+@@ -1,7 +1,5 @@
+-
+-
+-#ifndef _MT6575_TYPEDEFS_H
+-#define _MT6575_TYPEDEFS_H
++#ifndef _MT6577_TYPEDEFS_H
++#define _MT6577_TYPEDEFS_H
+ 
+ #include <linux/bug.h>
+ 
+@@ -249,5 +247,5 @@
+ #define    UNKNOWN_IC_VERSION   0xFF
+ 
+ 
+-#endif  // _MT6575_TYPEDEFS_H
++#endif  // _MT6577_TYPEDEFS_H
+ 

@@ -1,0 +1,323 @@
+diff -rubN inc/kd_camera_feature_enum.h inc.iq255/kd_camera_feature_enum.h
+--- inc/kd_camera_feature_enum.h	2012-08-04 12:21:59.000000000 +0300
++++ inc.iq255/kd_camera_feature_enum.h	2012-05-02 21:05:52.000000000 +0300
+@@ -43,7 +43,6 @@
+     FTYPE_ENUM  (
+         SCENE_MODE_BEGIN    =   0, 
+         SCENE_MODE_OFF      =   SCENE_MODE_BEGIN,   // Disable scene mode equal Auto mode
+-        SCENE_MODE_NORMAL,                          // Normal mode
+         SCENE_MODE_ACTION,                          // Action mode
+         SCENE_MODE_PORTRAIT,                        // Portrait mode
+         SCENE_MODE_LANDSCAPE,                       // Landscape
+@@ -139,10 +138,6 @@
+         AE_EV_COMP_15,                        // EV compensate 1.5
+         AE_EV_COMP_17,                        // EV compensate 1.7
+         AE_EV_COMP_20,                        // EV compensate 2.0
+-        AE_EV_COMP_23,						  // EV compensate 2.3
+-        AE_EV_COMP_25,						  // EV compensate 2.5
+-        AE_EV_COMP_27,						  // EV compensate 2.7
+-        AE_EV_COMP_30,						  // EV compensate 3.0        
+         AE_EV_COMP_n03,                       // EV compensate -0.3    
+         AE_EV_COMP_n05,                       // EV compensate -0.5
+         AE_EV_COMP_n07,                       // EV compensate -0.7
+@@ -151,10 +146,6 @@
+         AE_EV_COMP_n15,                       // EV compensate -1.5
+         AE_EV_COMP_n17,                       // EV compensate -1.7
+         AE_EV_COMP_n20,                       // EV compensate -2.0
+-        AE_EV_COMP_n23, 					  // EV compensate -2.3    
+-        AE_EV_COMP_n25, 					  // EV compensate -2.5
+-        AE_EV_COMP_n27, 					  // EV compensate -2.7
+-        AE_EV_COMP_n30, 					  // EV compensate -3.0        
+         AE_EV_COMP_TOTAL_NUM
+     )
+ ) AE_EVCOMP_T;
+@@ -246,7 +237,6 @@
+         AF_MODE_BEGIN   =   0, 
+         AF_MODE_AFS     =   AF_MODE_BEGIN,  // (AF-Single Shot Mode)
+         AF_MODE_AFC,                        // AF-Continuous Mode
+-        AF_MODE_AFC_VIDEO,                  // AF-Continuous Mode (Video)
+         AF_MODE_MACRO,                      // AF Macro Mode 
+         AF_MODE_INFINITY,                   // Focus is set at infinity. 
+         AF_MODE_MF,                         // Manual Focus Mode
+@@ -349,9 +339,7 @@
+         CAPTURE_MODE_MAV, 
+         CAPTURE_MODE_HDR, 
+         CAPTURE_MODE_ASD, 
+-        CAPTURE_MODE_PANO_3D,
+-        CAPTURE_MODE_SINGLE_3D,
+-        CAPTURE_MODE_FACE_BEAUTY,
++        CAPTURE_MODE_3D_SHOT,
+         NUM_OF_CAPTURE_MODE
+     )
+ ) CAPTURE_MODE_T;
+@@ -385,12 +373,8 @@
+         PREVIEW_SIZE_176_144, 
+         PREVIEW_SIZE_320_240, 
+         PREVIEW_SIZE_352_288, 
+-        PREVIEW_SIZE_480_320,        
+-        PREVIEW_SIZE_480_368,
+         PREVIEW_SIZE_640_480, 
+         PREVIEW_SIZE_720_480, 
+-        PREVIEW_SIZE_800_480, 
+-        PREVIEW_SIZE_864_480,		 
+         PREVIEW_SIZE_800_600, 
+         PREVIEW_SIZE_1280_720, 
+         PREVIEW_SIZE_1920_1080, 
+@@ -398,17 +382,6 @@
+     )
+ ) PREVIEW_SIZE_T;
+ 
+-//  Video Preview Size
+-FID_TO_TYPE_ENUM  (
+-    FID_VIDEO_PREVIEW_SIZE, 
+-    FTYPE_ENUM  (
+-        VIDEO_PREVIEW_SIZE_BEGIN      =   0, 
+-        VIDEO_PREVIEW_SIZE_640_480    =   VIDEO_PREVIEW_SIZE_BEGIN, 
+-        VIDEO_PREVIEW_SIZE_800_600, 
+-        NUM_OF_VIDEO_PREVIEW_SIZE
+-    )
+-) VIDEO_PREVIEW_SIZE_T;
+-
+ 
+ //  Frame Rate
+ FID_TO_TYPE_ENUM  (
+diff -rubN inc/kd_camera_feature_id.h inc.iq255/kd_camera_feature_id.h
+--- inc/kd_camera_feature_id.h	2012-08-04 12:21:59.000000000 +0300
++++ inc.iq255/kd_camera_feature_id.h	2012-05-02 21:05:52.000000000 +0300
+@@ -101,7 +101,6 @@
+         FID_CAPTURE_MODE, 
+         FID_CAP_SIZE, 
+         FID_PREVIEW_SIZE, 
+-        FID_VIDEO_PREVIEW_SIZE,         
+         FID_FRAME_RATE, 
+         FID_FRAME_RATE_RANGE, 
+         FID_AE_FLICKER, 
+diff -rubN inc/kd_imgsensor_define.h inc.iq255/kd_imgsensor_define.h
+--- inc/kd_imgsensor_define.h	2013-06-08 21:54:10.000000000 +0300
++++ inc.iq255/kd_imgsensor_define.h	2012-05-02 21:05:52.000000000 +0300
+@@ -718,8 +718,6 @@
+     ACDK_SCENARIO_ID_VIDEO_DECODE_RV8,
+     ACDK_SCENARIO_ID_VIDEO_DECODE_RV9,
+     ACDK_SCENARIO_ID_CAMERA_ZSD,
+-    ACDK_SCENARIO_ID_CAMERA_3D_PREVIEW,
+-    ACDK_SCENARIO_ID_CAMERA_3D_CAPTURE,
+ }   ACDK_SCENARIO_ID_ENUM;
+ 
+ //typedef enum
+@@ -922,7 +920,7 @@
+ //#include "msdk_feature_exp.h"
+ //#include "msdk_nvram_camera_exp.h"
+ //
+-#define MAX_NUM_OF_SUPPORT_SENSOR 16
++#define MAX_NUM_OF_SUPPORT_SENSOR 8
+ //
+ #define SENSOR_CLOCK_POLARITY_HIGH    0
+ #define SENSOR_CLOCK_POLARITY_LOW 1
+@@ -978,9 +976,6 @@
+   SENSOR_FEATURE_SET_AF_WINDOW,
+   SENSOR_FEATURE_GET_EV_AWB_REF,
+   SENSOR_FEATURE_GET_SHUTTER_GAIN_AWB_GAIN,
+-  SENSOR_FEATURE_GET_AF_MAX_NUM_FOCUS_AREAS,
+-  SENSOR_FEATURE_GET_AE_MAX_NUM_METERING_AREAS,
+-  SENSOR_FEATURE_SET_AE_WINDOW,
+   SENSOR_FEATURE_GET_EXIF_INFO,
+   SENSOR_FEATURE_MAX
+ } ACDK_SENSOR_FEATURE_ENUM;
+@@ -1033,21 +1028,6 @@
+   MUINT16 SensorFullHeight;
+ } ACDK_SENSOR_RESOLUTION_INFO_STRUCT, *PACDK_SENSOR_RESOLUTION_INFO_STRUCT;
+ 
+-typedef enum
+-{
+-  SENSOR_3D_NOT_SUPPORT = 0,
+-  SENSOR_3D_CAPTURE_FRAME_SEQUENTIAL,
+-  SENSOR_3D_CAPTURE_SIDE_BY_SIDE,
+-  SENSOR_3D_CAPTURE_TOP_BOTTOM,
+-}ACDK_SENSOR_3D_TYPE_ENUM;
+-
+-typedef enum
+-{
+-	RAW_TYPE_10BIT = 0,
+-	RAW_TYPE_8BIT,
+-	RAW_TYPE_12BIT,
+-	RAW_TYPE_MAX
+-}ACDK_SENSOR_RAW_TYPE_ENUM;
+ typedef struct
+ {
+   MUINT16 SensorPreviewResolutionX;
+@@ -1091,8 +1071,7 @@
+   MUINT8   SensorWidthSampling;
+   MUINT8   SensorHightSampling;  
+   MUINT8   SensorPacketECCOrder;
+-  ACDK_SENSOR_3D_TYPE_ENUM   SensorDriver3D;
+-  ACDK_SENSOR_RAW_TYPE_ENUM  SensorRawType;
++  MUINT8   SensorDriver3D;
+ } ACDK_SENSOR_INFO_STRUCT, *PACDK_SENSOR_INFO_STRUCT;
+ 
+ 
+@@ -1758,8 +1737,7 @@
+ #define MSDK_SCENARIO_ID_CAMERA_CAPTURE_MEM     ACDK_SCENARIO_ID_CAMERA_CAPTURE_MEM
+ #define MSDK_SENSOR_OPERATION_MODE_VIDEO	    ACDK_SENSOR_OPERATION_MODE_VIDEO
+ #define MSDK_SCENARIO_ID_CAMERA_ZSD				ACDK_SCENARIO_ID_CAMERA_ZSD
+-#define MSDK_SCENARIO_ID_CAMERA_3D_PREVIEW		ACDK_SCENARIO_ID_CAMERA_3D_PREVIEW
+-#define MSDK_SCENARIO_ID_CAMERA_3D_CAPTURE		ACDK_SCENARIO_ID_CAMERA_3D_CAPTURE
++
+ /*******************************************************************************
+ *
+ ********************************************************************************/
+diff -rubN inc/kd_imgsensor.h inc.iq255/kd_imgsensor.h
+--- inc/kd_imgsensor.h	2013-10-11 14:47:41.918523930 +0300
++++ inc.iq255/kd_imgsensor.h	2012-05-02 21:05:52.000000000 +0300
+@@ -116,12 +116,10 @@
+ #define OV2640_SENSOR_ID                        0x2642
+ #define OV2650_SENSOR_ID                        0x2652
+ #define OV3640_SENSOR_ID                        0x364C
+-#define OV3660_SENSOR_ID                        0x3660
+ #define OV6680_SENSOR_ID                        0x6681
+ #define OV7660_SENSOR_ID                        0x7660
+ #define OV7670_SENSOR_ID                        0x7673
+ #define OV7680_SENSOR_ID                        0x7680
+-#define OV7690_SENSOR_ID                        0x7691//LK@I3000,2011-12-15
+ #define OV9650_SENSOR_ID                        0x9652
+ #define OV9655_SENSOR_ID                        0x9657
+ #define OV9660_SENSOR_ID                        0x9663
+@@ -131,6 +129,7 @@
+ #define OV2650_SENSOR_ID_1                      0x2651
+ #define OV2650_SENSOR_ID_2                      0x2652
+ #define OV2650_SENSOR_ID_3			            0x2655
++#define OV3660_SENSOR_ID					    0x3660
+ #define OV5642_SENSOR_ID            0x5642
+ #define OV5650_SENSOR_ID                        0x5651
+ #define OV9665_SENSOR_ID                        0x9663
+@@ -177,13 +176,8 @@
+ #define RJ53S1BA0C_SENSOR_ID                    0x0129
+ 
+ #define HI251_SENSOR_ID                         0x0084
+-// LuckAs add
+-#define HI253_SENSOR_ID                         0x0092
+-// fixme!!!
+-#define SP0A19_SENSOR_ID                        0x00a6
+-// LuckAs end
+-
+ #define HIVICF_SENSOR_ID                        0x0081
++#define HI253_SENSOR_ID                         0x0092
+ #define HI704_SENSOR_ID                         0x0096
+ 
+ #define IMX058_SENSOR_ID                        0x0058
+@@ -193,10 +187,8 @@
+ #define MT9V114_SENSOR_ID                         0x2283
+ #define MT9P015_SENSOR_ID                       0x2803
+ #define MT9P017_SENSOR_ID                       0x4800
+-#define GC0329_SENSOR_ID                        0x00c0
+ #define MT9P017MIPI_SENSOR_ID                       0x4800
+ #define SHARP3D_SENSOR_ID                       0x003d
+-#define GC0309_SENSOR_ID                         0x00a0   //amy0309 
+ #define MT9T113MIPI_SENSOR_ID                       0x4680
+ 
+ /* CAMERA DRIVER NAME */
+@@ -211,6 +203,7 @@
+ #define SENSOR_DRVNAME_OV2655_YUV   "ov2655yuv"
+ #define SENSOR_DRVNAME_OV2659_YUV   "ov2659yuv"
+ #define SENSOR_DRVNAME_OV5650_RAW   	"ov5650raw"
++#define SENSOR_DRVNAME_OV3660_YUV	"ov3660yuv"
+ #define SENSOR_DRVNAME_OV3640_RAW   "ov3640"
+ #define SENSOR_DRVNAME_OV3640_YUV    "ov3640yuv"
+ #define SENSOR_DRVNAME_OV5642_RAW   "ov5642raw"
+@@ -221,24 +214,17 @@
+ #define SENSOR_DRVNAME_OV5642_YUV   "ov5642yuv"
+ #define SENSOR_DRVNAME_OV5642_YUV_SWI2C   "ov5642yuvswi2c"
+ #define SENSOR_DRVNAME_OV7675_YUV   "ov7675yuv"
+-#define SENSOR_DRVNAME_OV7690_YUV   "ov7690yuv"//LK@I3000,2011-12-15
+-#define SENSOR_DRVNAME_OV3660_YUV    	"ov3660yuv"
+ #define SENSOR_DRVNAME_IMX073_MIPI_RAW   "imx073mipiraw"
+ #define SENSOR_DRVNAME_S5K5CAGX_YUV     "s5k5cagxyuv"
+ #define SENSOR_DRVNAME_SIV120B_YUV    "siv120byuv"
+ #define SENSOR_DRVNAME_MT9V113_YUV    "mt9v113yuv"
+-// Luckas add
+ #define SENSOR_DRVNAME_HI253_YUV    	"hi253yuv"
+-#define SENSOR_DRVNAME_SP0A19_YUV	"sp0a19yuv"
+-// Luckas end
+ #define SENSOR_DRVNAME_HI704_YUV    	"hi704yuv"
+ #define SENSOR_DRVNAME_MT9V114_YUV    "mt9v114"
+ #define SENSOR_DRVNAME_MT9T113_YUV    "mt9t113yuv"
+ #define SENSOR_DRVNAME_PAS6180_SERIAL_YUV    "pas6180serialyuv"
+ #define SENSOR_DRVNAME_SHARP3D_MIPI_YUV    "sharp3dmipiyuv"
+ #define SENSOR_DRVNAME_MT9T113_MIPI_YUV    "mt9t113mipiyuv"
+-#define SENSOR_DRVNAME_GC0329_YUV   	"gc0329yuv"
+-#define SENSOR_DRVNAME_GC0309_YUV      "gc0309yuv"
+ /*******************************************************************************
+ *
+ ********************************************************************************/
+diff -rubN inc/kd_imgsensor.h.orig inc.iq255/kd_imgsensor.h.orig
+--- inc/kd_imgsensor.h.orig	2012-08-04 12:21:59.000000000 +0300
++++ inc.iq255/kd_imgsensor.h.orig	2012-05-02 21:05:52.000000000 +0300
+@@ -116,12 +116,10 @@
+ #define OV2640_SENSOR_ID                        0x2642
+ #define OV2650_SENSOR_ID                        0x2652
+ #define OV3640_SENSOR_ID                        0x364C
+-#define OV3660_SENSOR_ID                        0x3660
+ #define OV6680_SENSOR_ID                        0x6681
+ #define OV7660_SENSOR_ID                        0x7660
+ #define OV7670_SENSOR_ID                        0x7673
+ #define OV7680_SENSOR_ID                        0x7680
+-#define OV7690_SENSOR_ID                        0x7691//LK@I3000,2011-12-15
+ #define OV9650_SENSOR_ID                        0x9652
+ #define OV9655_SENSOR_ID                        0x9657
+ #define OV9660_SENSOR_ID                        0x9663
+@@ -131,6 +129,7 @@
+ #define OV2650_SENSOR_ID_1                      0x2651
+ #define OV2650_SENSOR_ID_2                      0x2652
+ #define OV2650_SENSOR_ID_3			            0x2655
++#define OV3660_SENSOR_ID					    0x3660
+ #define OV5642_SENSOR_ID            0x5642
+ #define OV5650_SENSOR_ID                        0x5651
+ #define OV9665_SENSOR_ID                        0x9663
+@@ -178,6 +177,7 @@
+ 
+ #define HI251_SENSOR_ID                         0x0084
+ #define HIVICF_SENSOR_ID                        0x0081
++#define HI253_SENSOR_ID                         0x0092
+ #define HI704_SENSOR_ID                         0x0096
+ 
+ #define IMX058_SENSOR_ID                        0x0058
+@@ -187,10 +187,8 @@
+ #define MT9V114_SENSOR_ID                         0x2283
+ #define MT9P015_SENSOR_ID                       0x2803
+ #define MT9P017_SENSOR_ID                       0x4800
+-#define GC0329_SENSOR_ID                        0x00c0
+ #define MT9P017MIPI_SENSOR_ID                       0x4800
+ #define SHARP3D_SENSOR_ID                       0x003d
+-#define GC0309_SENSOR_ID                         0x00a0   //amy0309 
+ #define MT9T113MIPI_SENSOR_ID                       0x4680
+ 
+ /* CAMERA DRIVER NAME */
+@@ -205,6 +203,7 @@
+ #define SENSOR_DRVNAME_OV2655_YUV   "ov2655yuv"
+ #define SENSOR_DRVNAME_OV2659_YUV   "ov2659yuv"
+ #define SENSOR_DRVNAME_OV5650_RAW   	"ov5650raw"
++#define SENSOR_DRVNAME_OV3660_YUV	"ov3660yuv"
+ #define SENSOR_DRVNAME_OV3640_RAW   "ov3640"
+ #define SENSOR_DRVNAME_OV3640_YUV    "ov3640yuv"
+ #define SENSOR_DRVNAME_OV5642_RAW   "ov5642raw"
+@@ -215,20 +214,17 @@
+ #define SENSOR_DRVNAME_OV5642_YUV   "ov5642yuv"
+ #define SENSOR_DRVNAME_OV5642_YUV_SWI2C   "ov5642yuvswi2c"
+ #define SENSOR_DRVNAME_OV7675_YUV   "ov7675yuv"
+-#define SENSOR_DRVNAME_OV7690_YUV   "ov7690yuv"//LK@I3000,2011-12-15
+-#define SENSOR_DRVNAME_OV3660_YUV    	"ov3660yuv"
+ #define SENSOR_DRVNAME_IMX073_MIPI_RAW   "imx073mipiraw"
+ #define SENSOR_DRVNAME_S5K5CAGX_YUV     "s5k5cagxyuv"
+ #define SENSOR_DRVNAME_SIV120B_YUV    "siv120byuv"
+ #define SENSOR_DRVNAME_MT9V113_YUV    "mt9v113yuv"
++#define SENSOR_DRVNAME_HI253_YUV    	"hi253yuv"
+ #define SENSOR_DRVNAME_HI704_YUV    	"hi704yuv"
+ #define SENSOR_DRVNAME_MT9V114_YUV    "mt9v114"
+ #define SENSOR_DRVNAME_MT9T113_YUV    "mt9t113yuv"
+ #define SENSOR_DRVNAME_PAS6180_SERIAL_YUV    "pas6180serialyuv"
+ #define SENSOR_DRVNAME_SHARP3D_MIPI_YUV    "sharp3dmipiyuv"
+ #define SENSOR_DRVNAME_MT9T113_MIPI_YUV    "mt9t113mipiyuv"
+-#define SENSOR_DRVNAME_GC0329_YUV   	"gc0329yuv"
+-#define SENSOR_DRVNAME_GC0309_YUV      "gc0309yuv"
+ /*******************************************************************************
+ *
+ ********************************************************************************/

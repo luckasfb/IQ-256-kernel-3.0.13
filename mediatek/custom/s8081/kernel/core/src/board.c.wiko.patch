@@ -1,0 +1,36 @@
+--- board.c	2013-10-02 18:42:07.000000000 +0300
++++ board.c.wiko	2012-11-26 10:53:06.000000000 +0200
+@@ -24,12 +24,11 @@
+ #include <mach/system.h>
+ #include <mach/board.h>
+ #include <mach/hardware.h>
+-// LuckAs change
+-#include <mach/mt6575_gpio.h>
++#include <mach/mt6577_gpio.h>
+ #include <mach/mt_bt.h>
+ #include <mach/eint.h>
+ #include <mach/mtk_rtc.h>
+-#include <mach/mt6575_typedefs.h>
++#include <mach/mt6577_typedefs.h>
+ 
+ #include <cust_gpio_usage.h>
+ #include <cust_eint.h>
+@@ -84,15 +83,15 @@
+ /*=======================================================================*/
+ extern kal_bool pmic_chrdet_status(void);
+ 
+-void mt6575_power_off(void)
++void mt6577_power_off(void)
+ {
+-	printk("mt6575_power_off\n");
++	printk("mt6577_power_off\n");
+ 
+ 	/* pull PWRBB low */
+ 	rtc_bbpu_power_down();
+ 
+ 	while (1) {
+-		printk("mt6575_power_off : check charger\n");
++		printk("mt6577_power_off : check charger\n");
+ 		if (pmic_chrdet_status() == KAL_TRUE)
+ 			arch_reset(0, "charger");
+ 	}

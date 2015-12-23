@@ -1,0 +1,98 @@
+--- pmt.h	2012-11-14 04:20:29.000000000 +0200
++++ pmt.h.iq255	2012-05-02 21:05:52.000000000 +0300
+@@ -1,33 +1,44 @@
+-#ifndef _PMT_H
+-#define _PMT_H
++/* Copyright Statement:
++ *
++ * This software/firmware and related documentation ("MediaTek Software") are
++ * protected under relevant copyright laws. The information contained herein
++ * is confidential and proprietary to MediaTek Inc. and/or its licensors.
++ * Without the prior written permission of MediaTek inc. and/or its licensors,
++ * any reproduction, modification, use or disclosure of MediaTek Software,
++ * and information contained herein, in whole or in part, shall be strictly prohibited.
++ */
++/* MediaTek Inc. (C) 2010. All rights reserved.
++ *
++ * BY OPENING THIS FILE, RECEIVER HEREBY UNEQUIVOCALLY ACKNOWLEDGES AND AGREES
++ * THAT THE SOFTWARE/FIRMWARE AND ITS DOCUMENTATIONS ("MEDIATEK SOFTWARE")
++ * RECEIVED FROM MEDIATEK AND/OR ITS REPRESENTATIVES ARE PROVIDED TO RECEIVER ON
++ * AN "AS-IS" BASIS ONLY. MEDIATEK EXPRESSLY DISCLAIMS ANY AND ALL WARRANTIES,
++ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED WARRANTIES OF
++ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE OR NONINFRINGEMENT.
++ * NEITHER DOES MEDIATEK PROVIDE ANY WARRANTY WHATSOEVER WITH RESPECT TO THE
++ * SOFTWARE OF ANY THIRD PARTY WHICH MAY BE USED BY, INCORPORATED IN, OR
++ * SUPPLIED WITH THE MEDIATEK SOFTWARE, AND RECEIVER AGREES TO LOOK ONLY TO SUCH
++ * THIRD PARTY FOR ANY WARRANTY CLAIM RELATING THERETO. RECEIVER EXPRESSLY ACKNOWLEDGES
++ * THAT IT IS RECEIVER'S SOLE RESPONSIBILITY TO OBTAIN FROM ANY THIRD PARTY ALL PROPER LICENSES
++ * CONTAINED IN MEDIATEK SOFTWARE. MEDIATEK SHALL ALSO NOT BE RESPONSIBLE FOR ANY MEDIATEK
++ * SOFTWARE RELEASES MADE TO RECEIVER'S SPECIFICATION OR TO CONFORM TO A PARTICULAR
++ * STANDARD OR OPEN FORUM. RECEIVER'S SOLE AND EXCLUSIVE REMEDY AND MEDIATEK'S ENTIRE AND
++ * CUMULATIVE LIABILITY WITH RESPECT TO THE MEDIATEK SOFTWARE RELEASED HEREUNDER WILL BE,
++ * AT MEDIATEK'S OPTION, TO REVISE OR REPLACE THE MEDIATEK SOFTWARE AT ISSUE,
++ * OR REFUND ANY SOFTWARE LICENSE FEES OR SERVICE CHARGE PAID BY RECEIVER TO
++ * MEDIATEK FOR SUCH MEDIATEK SOFTWARE AT ISSUE.
++ *
++ * The following software/firmware and/or related documentation ("MediaTek Software")
++ * have been modified by MediaTek Inc. All revisions are subject to any receiver's
++ * applicable license agreements with MediaTek Inc.
++ */
+ 
+-#include "partition_define.h"
+ 
+-//mt6516_partition.h has defination
+-//mt6516_download.h define again, both is 20
++#ifndef _PMT_H
++#define _PMT_H
+ 
+ #define MAX_PARTITION_NAME_LEN 64
+-#ifdef MTK_EMMC_SUPPORT
+-/*64bit*/
+-typedef struct
+-{
+-    unsigned char name[MAX_PARTITION_NAME_LEN];     /* partition name */
+-    unsigned long long size;     						/* partition size */	
+-    unsigned long long offset;       					/* partition start */
+-    unsigned long long mask_flags;       				/* partition flags */
+-
+-} pt_resident;
+-/*32bit*/
+-typedef struct 
+-{
+-    unsigned char name[MAX_PARTITION_NAME_LEN];     /* partition name */
+-    unsigned long  size;     						/* partition size */	
+-    unsigned long  offset;       					/* partition start */
+-    unsigned long mask_flags;       				/* partition flags */
+-
+-} pt_resident32;
+-#else
+-
++#define PART_MAX_COUNT    20
+ typedef struct
+ {
+     unsigned char name[MAX_PARTITION_NAME_LEN];     /* partition name */
+@@ -36,8 +47,6 @@
+     unsigned long mask_flags;       				/* partition flags */
+ 
+ } pt_resident;
+-#endif
+-
+ 
+ #define DM_ERR_OK 0
+ #define DM_ERR_NO_VALID_TABLE 9
+@@ -46,7 +55,7 @@
+ 
+ //Sequnce number
+ 
+-
++//for temp test
+ //#define PT_LOCATION          4090      // (4096-80)
+ //#define MPT_LOCATION        4091            // (4096-81)
+ #define PT_SIG      0x50547631            //"PTv1"
+@@ -83,5 +92,5 @@
+ 	int pt_has_space:4;
+ } pt_info;
+ 
++
+ #endif
+-    

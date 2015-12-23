@@ -1,0 +1,11 @@
+diff -ruN bluetooth/hci.h bluetooth.orig/hci.h
+--- bluetooth/hci.h	2012-11-26 04:22:28.000000000 +0200
++++ bluetooth.orig/hci.h	2013-04-08 21:39:48.000000000 +0300
+@@ -37,7 +37,6 @@
+ #define HCI_DEV_DOWN			4
+ #define HCI_DEV_SUSPEND			5
+ #define HCI_DEV_RESUME			6
+-#define HCI_DEV_WRITE	7
+ 
+ /* HCI notify events */
+ #define HCI_NOTIFY_CONN_ADD		1

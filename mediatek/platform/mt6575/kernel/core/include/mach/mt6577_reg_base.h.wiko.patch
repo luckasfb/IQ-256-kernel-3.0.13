@@ -1,0 +1,30 @@
+--- mt6575_reg_base.h	2012-11-13 05:56:24.000000000 +0200
++++ mt6577_reg_base.h.wiko	2012-11-13 09:58:42.000000000 +0200
+@@ -1,6 +1,5 @@
+-
+-#ifndef __MT6575_REG_BASE__
+-#define __MT6575_REG_BASE__
++#ifndef __MT6577_REG_BASE__
++#define __MT6577_REG_BASE__
+ 
+ /* MM sub-system */
+ #define SYSRAM_BASE 0xF2000000
+@@ -95,8 +94,10 @@
+ #define PL310_BASE 0xF000E000
+ #define MCUSYS_CFGREG_BASE 0xF0009000
+ #define INT_POL_CTL0 (MCUSYS_CFGREG_BASE + 0x50)
+-#define INTERNAL_SRAM_BASE 0xF3000000
+-
++#define INTERNAL_SRAM_BASE 0XF3000000
++#define CORTEA9MP_BASE 0xF000a000
++#define DEBUGTOP_BASE 0xF0100000
++#define TOPRGU_BASE AP_RGU_BASE
+ #define UART1_BASE 0xF1009000
+ #define UART2_BASE 0xF100A000
+ #define UART3_BASE 0xF100B000
+@@ -118,4 +119,4 @@
+ 
+ #define VER_BASE 0xF8000000
+ 
+-#endif  /* !__MT6575_REG_BASE__ */
++#endif  /* !__MT6577_REG_BASE__ */

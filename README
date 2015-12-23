@@ -1,0 +1,5 @@
+LuckAs custom kernel for Fly IQ256 version 3.0.13
+
+Use for build kernel:
+
+./mk -t s8081 new kernel

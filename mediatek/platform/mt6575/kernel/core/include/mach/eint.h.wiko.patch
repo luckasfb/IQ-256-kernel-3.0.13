@@ -1,0 +1,39 @@
+--- eint.h	2012-11-13 05:55:57.000000000 +0200
++++ eint.h.wiko	2012-11-13 09:58:42.000000000 +0200
+@@ -1,7 +1,9 @@
++#ifndef __MT6577_EINT_H__
++#define __MT6577_EINT_H__
+ 
+-#ifndef __MT6575_EINT_H__
+-#define __MT6575_EINT_H__
+-
++/*
++ * Define hardware registers.
++ */
+ 
+ #define EINT_STA        (EINT_BASE + 0x0000)
+ #define EINT_INTACK     (EINT_BASE + 0x0008)
+@@ -20,11 +22,17 @@
+ #define EINT_DMASK_SET  (EINT_BASE + 0x0110)
+ #define EINT_DMASK_CLR  (EINT_BASE + 0x0120)
+ 
++/*
++ * Define constants.
++ */
+ 
+ #define EINT_MAX_CHANNEL    (32)
+ #define MT65XX_EINT_POL_NEG (0)
+ #define MT65XX_EINT_POL_POS (1)
+ 
++/*
++ * Define function prototypes.
++ */
+ 
+ extern void mt65xx_eint_mask(unsigned int eint_num);
+ extern void mt65xx_eint_unmask(unsigned int eint_num);
+@@ -38,4 +46,4 @@
+ extern int mt65xx_eint_init(void);
+ extern int get_td_eint_num(char *td_name, int len);
+ 
+-#endif  /*!__MT6575_EINT_H__ */
++#endif  /*!__MT6577_EINT_H__ */

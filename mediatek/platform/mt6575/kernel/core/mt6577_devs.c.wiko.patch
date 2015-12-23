@@ -1,0 +1,1211 @@
+--- mt6575_devs.c	2013-07-25 14:58:02.000000000 +0300
++++ mt6577_devs.c.wiko	2012-11-28 12:06:06.000000000 +0200
+@@ -16,17 +16,19 @@
+ #include <linux/amba/bus.h>
+ #include <linux/amba/clcd.h>
+ #include <linux/version.h>
++#include <linux/musbfsh.h>
+ 
+ #include "mach/memory.h"
+ #include "mach/irqs.h"
+-#include "mach/mt6575_reg_base.h"
+-#include "mach/mt6575_devs.h"
+-#include "mach/mt6575_boot.h"
++#include "mach/mt6577_reg_base.h"
++#include "mach/mt6577_devs.h"
++#include "mach/mt6577_boot.h"
+ 
+ /*NOTICE: the compile option should be defined if EFUSE is programed*/
+-/* #define CONFIG_MTK_USB_UNIQUE_SERIAL */
++#define CONFIG_MTK_USB_UNIQUE_SERIAL
+ #define SERIALNO_LEN 32
+ static char serial_number[SERIALNO_LEN];
++#define USB_UNIQUE_HEX_SERIAL  1  //add by ljx
+ 
+ extern BOOTMODE get_boot_mode(void);
+ extern void adjust_kernel_cmd_line_setting_for_console(char*, char*);
+@@ -38,7 +40,7 @@
+ static int use_bl_fb = 0;
+ 
+ /*=======================================================================*/
+-/* MT6575 USB GADGET                                                     */
++/* MT6577 USB GADGET                                                     */
+ /*=======================================================================*/
+ static u64 usb_dmamask = DMA_BIT_MASK(32);
+ 
+@@ -54,59 +56,90 @@
+ };
+ 
+ /*=======================================================================*/
+-/* MT6575 UART Ports                                                     */
++/* MT6575 USB11 Host                      */
++/*=======================================================================*/
++#if defined(CONFIG_MTK_USBFSH) 
++static u64 usb11_dmamask = DMA_BIT_MASK(32);
++extern void musbfsh_hcd_release (struct device *dev);
++
++static struct musbfsh_hdrc_config musbfsh_config_mt65xx = {    
++	.multipoint     = false,    
++	.dyn_fifo       = true,    
++	.soft_con       = true,    
++	.dma            = true,        
++	.num_eps        = 6,    
++	.dma_channels   = 4,
++};
++static struct musbfsh_hdrc_platform_data usb_data_mt65xx = {
++	.mode           = 1,
++	.config         = &musbfsh_config_mt65xx,
++};
++static struct platform_device mt_usb11_dev = {
++	.name           = "musbfsh_hdrc",
++	.id             = -1,
++	.dev = {                
++		.platform_data          = &usb_data_mt65xx,
++		.dma_mask               = &usb11_dmamask,
++		.coherent_dma_mask      = DMA_BIT_MASK(32),
++		.release		= musbfsh_hcd_release,
++	},
++};
++#endif
++
++/*=======================================================================*/
++/* MTK UART Ports                                                     */
+ /*=======================================================================*/
+ #if defined(CFG_DEV_UART1)
+-static struct resource mt6575_resource_uart1[] = {
++static struct resource mtk_resource_uart1[] = {
+ 	{
+ 		.start		= UART1_BASE,
+-		.end		= UART1_BASE + MT6575_UART_SIZE - 1,
++		.end		= UART1_BASE + MTK_UART_SIZE - 1,
+ 		.flags		= IORESOURCE_MEM,
+ 	},
+ 	{
+-		.start		= MT6575_UART1_IRQ_ID,
++		.start		= MT6577_UART1_IRQ_ID,
+ 		.flags		= IORESOURCE_IRQ,
+ 	},
+ };
+ #endif
+ 
+ #if defined(CFG_DEV_UART2)
+-static struct resource mt6575_resource_uart2[] = {
++static struct resource mtk_resource_uart2[] = {
+ 	{
+ 		.start		= UART2_BASE,
+-		.end		= UART2_BASE + MT6575_UART_SIZE - 1,
++		.end		= UART2_BASE + MTK_UART_SIZE - 1,
+ 		.flags		= IORESOURCE_MEM,
+ 	},
+ 	{
+-		.start		= MT6575_UART2_IRQ_ID,
++		.start		= MT6577_UART2_IRQ_ID,
+ 		.flags		= IORESOURCE_IRQ,
+ 	},
+ };
+ #endif
+ 
+ #if defined(CFG_DEV_UART3)
+-static struct resource mt6575_resource_uart3[] = {
++static struct resource mtk_resource_uart3[] = {
+ 	{
+ 		.start		= UART3_BASE,
+-		.end		= UART3_BASE + MT6575_UART_SIZE - 1,
++		.end		= UART3_BASE + MTK_UART_SIZE - 1,
+ 		.flags		= IORESOURCE_MEM,
+ 	},
+ 	{
+-		.start		= MT6575_UART3_IRQ_ID,
++		.start		= MT6577_UART3_IRQ_ID,
+ 		.flags		= IORESOURCE_IRQ,
+ 	},
+ };
+ #endif
+ 
+ #if defined(CFG_DEV_UART4)
+-static struct resource mt6575_resource_uart4[] = {
++static struct resource mtk_resource_uart4[] = {
+ 	{
+ 		.start		= UART4_BASE,
+-		.end		= UART4_BASE + MT6575_UART_SIZE - 1,
++		.end		= UART4_BASE + MTK_UART_SIZE - 1,
+ 		.flags		= IORESOURCE_MEM,
+ 	},
+ 	{
+-		.start		= MT6575_UART4_IRQ_ID,
++		.start		= MT6577_UART4_IRQ_ID,
+ 		.flags		= IORESOURCE_IRQ,
+ 	},
+ };
+@@ -128,6 +161,14 @@
+ #define RESERVED_MEM_SIZE_FOR_FB (0x400000)
+ #endif
+ 
++/*
++ * The memory size reserved for PMEM
++ *
++ * The size could be varied in different solutions. 
++ * The size is set in mt65xx_fixup function.
++ * - MT6577 in develop should be 0x3600000
++ * - MT6577 SQC should be 0x0
++ */
+ unsigned int RESERVED_MEM_SIZE_FOR_PMEM = 0;
+ 
+ #define TOTAL_RESERVED_MEM_SIZE (RESERVED_MEM_SIZE_FOR_PMEM + \
+@@ -142,43 +183,70 @@
+ #define FB_SIZE        (RESERVED_MEM_SIZE_FOR_FB)
+ 
+ 
+-static struct platform_device mt6575_device_uart[] = {
++static struct platform_device mtk_device_uart[] = {
+ 
+     #if defined(CFG_DEV_UART1)
+     {
+-    	.name			= "mt6575-uart",
++    	.name			= "mtk-uart",
+     	.id				= 0,
+-    	.num_resources	= ARRAY_SIZE(mt6575_resource_uart1),
+-    	.resource		= mt6575_resource_uart1,
++    	.num_resources	= ARRAY_SIZE(mtk_resource_uart1),
++    	.resource		= mtk_resource_uart1,
+     },
+     #endif
+     #if defined(CFG_DEV_UART2)
+     {
+-    	.name			= "mt6575-uart",
++    	.name			= "mtk-uart",
+     	.id				= 1,
+-    	.num_resources	= ARRAY_SIZE(mt6575_resource_uart2),
+-    	.resource		= mt6575_resource_uart2,
++    	.num_resources	= ARRAY_SIZE(mtk_resource_uart2),
++    	.resource		= mtk_resource_uart2,
+     },
+     #endif
+     #if defined(CFG_DEV_UART3)
+     {
+-    	.name			= "mt6575-uart",
++    	.name			= "mtk-uart",
+     	.id				= 2,
+-    	.num_resources	= ARRAY_SIZE(mt6575_resource_uart3),
+-    	.resource		= mt6575_resource_uart3,
++    	.num_resources	= ARRAY_SIZE(mtk_resource_uart3),
++    	.resource		= mtk_resource_uart3,
+     },
+     #endif   
+ 
+     #if defined(CFG_DEV_UART4)
+     {
+-    	.name			= "mt6575-uart",
++    	.name			= "mtk-uart",
+     	.id				= 3,
+-    	.num_resources	= ARRAY_SIZE(mt6575_resource_uart4),
+-    	.resource		= mt6575_resource_uart4,
++    	.num_resources	= ARRAY_SIZE(mtk_resource_uart4),
++    	.resource		= mtk_resource_uart4,
+     },
+     #endif
+ };
+ 
++
++
++/*=======================================================================*/
++/* MTK External MD Ctl                                                   */
++/*=======================================================================*/
++#if defined(MTK_DT_SUPPORT) && (!defined(EVDO_DT_SUPPORT))
++static struct platform_device emd_chr_devs[] = {
++
++	{
++		.name	= "ext-md-ctl",
++		.id	= 0,
++	},
++	{
++		.name	= "ext-md-ctl",
++		.id	= 1,
++	},
++	{
++		.name	= "ext-md-ctl",
++		.id	= 2,
++	},
++};
++#endif
++#if defined(CONFIG_FIQ_DEBUGGER)
++extern void fiq_uart_fixup(int uart_port);
++extern struct platform_device mt_fiq_debugger;
++#endif
++
+ /* ========================================================================= */
+ /* implementation of serial number attribute                                 */
+ /* ========================================================================= */
+@@ -244,6 +312,7 @@
+ };
+ 
+ static char udc_chr[32] = {"ABCDEFGHIJKLMNOPQRSTUVWSYZ456789"};
++static char udc_chr1[16] = {"0123456789ABCDEF"};
+ int get_serial(uint64_t hwkey, uint32_t chipid, char ser[SERIALNO_LEN])
+ {
+     uint16_t hashkey[4];
+@@ -268,6 +337,17 @@
+         id = (id / 10);
+     }
+ 
++#if USB_UNIQUE_HEX_SERIAL
++   ser_idx = 0;
++    for (idx = 0; idx < ARRAY_SIZE(hashkey); idx++) {
++        ser[ser_idx++] = (hashkey[idx] & 0x000f);
++        ser[ser_idx++] = (hashkey[idx] & 0x00f0) >> 4;
++        ser[ser_idx++] = (hashkey[idx] & 0x0f00) >> 8;
++        ser[ser_idx++] = (hashkey[idx] & 0xf000) >> 12;
++    }
++    for (idx = 0; idx < ser_idx; idx++)
++        ser[idx] = udc_chr1[(int)ser[idx]];
++#else
+     /* generate serail using hashkey */
+     ser[0] = 'M';
+     ser[1] = 'T';
+@@ -281,16 +361,17 @@
+     }
+     for (idx = 3; idx < ser_idx; idx++)
+         ser[idx] = udc_chr[(int)ser[idx]];
++#endif
+     ser[ser_idx] = 0x00;
+     return 0;
+ }
+ 
+ /*=======================================================================*/
+-/* MT6575 GPIO                                                           */
++/* MTK GPIO                                                           */
+ /*=======================================================================*/
+ struct platform_device gpio_dev =
+ {
+-    .name = "mt6575-gpio",
++    .name = "mt-gpio",
+     .id   = -1,
+ };
+ 
+@@ -310,64 +391,64 @@
+         .flags  = IORESOURCE_MEM,
+     },
+     .dma_mask = ~0,
+-    .irq = MT6575_UART1_IRQ_ID,
++    .irq = MT6577_UART1_IRQ_ID,
+ };
+ #endif
+ 
+ /*=======================================================================*/
+-/* MT6575 SD Hosts                                                       */
++/* MT6577 SD Hosts                                                       */
+ /*=======================================================================*/
+ #if defined(CFG_DEV_MSDC0)
+-static struct resource mt6575_resource_sd0[] = {
++static struct resource mt6577_resource_sd0[] = {
+     {
+         .start  = MSDC_0_BASE,
+         .end    = MSDC_0_BASE + 0x108,
+         .flags  = IORESOURCE_MEM,
+     },
+     {
+-        .start  = MT6575_MSDC0_IRQ_ID,
++        .start  = MT6577_MSDC0_IRQ_ID,
+         .flags  = IORESOURCE_IRQ,
+     },
+ };
+ #endif
+ 
+ #if defined(CFG_DEV_MSDC1)
+-static struct resource mt6575_resource_sd1[] = {
++static struct resource mt6577_resource_sd1[] = {
+     {
+         .start  = MSDC_1_BASE,
+         .end    = MSDC_1_BASE + 0x108,
+         .flags  = IORESOURCE_MEM,
+     },
+     {
+-        .start  = MT6575_MSDC1_IRQ_ID,
++        .start  = MT6577_MSDC1_IRQ_ID,
+         .flags  = IORESOURCE_IRQ,
+     },
+ };
+ #endif
+ 
+ #if defined(CFG_DEV_MSDC2)
+-static struct resource mt6575_resource_sd2[] = {
++static struct resource mt6577_resource_sd2[] = {
+     {
+         .start  = MSDC_2_BASE,
+         .end    = MSDC_2_BASE + 0x108,
+         .flags  = IORESOURCE_MEM,
+     },
+     {
+-        .start  = MT6575_MSDC2_IRQ_ID,
++        .start  = MT6577_MSDC2_IRQ_ID,
+         .flags  = IORESOURCE_IRQ,
+     },
+ };
+ #endif
+ 
+ #if defined(CFG_DEV_MSDC3)
+-static struct resource mt6575_resource_sd3[] = {
++static struct resource mt6577_resource_sd3[] = {
+     {
+         .start  = MSDC_3_BASE,
+         .end    = MSDC_3_BASE + 0x108,
+         .flags  = IORESOURCE_MEM,
+     },
+     {
+-        .start  = MT6575_MSDC3_IRQ_ID,
++        .start  = MT6577_MSDC3_IRQ_ID,
+         .flags  = IORESOURCE_IRQ,
+     },
+ };
+@@ -384,7 +465,7 @@
+ 	}
+ };
+ 
+-static struct platform_device mt6575_device_fb = {
++static struct platform_device mt6577_device_fb = {
+     .name = "mtkfb",
+     .id   = 0,
+     .num_resources = ARRAY_SIZE(resource_fb),
+@@ -403,34 +484,34 @@
+ };
+ #endif
+ 
+-#if defined (CONFIG_MT6575_SPI)
+-static struct resource mt6575_spi_resources[] =
++#if defined (CONFIG_MTK_SPI)
++static struct resource mt_spi_resources[] =
+ {
+ 	[0]={
+-		.start = 0xc2097000,
+-		.end = 0xc2097000 + 0x0028,
++		.start = SPI_BASE,
++		.end = SPI_BASE + 0x0028,
+ 		.flags = IORESOURCE_MEM,
+ 	},
+ 	[1]={
+-		.start = MT6575_SPI_IRQ_ID,
++		.start = MT6577_SPI_IRQ_ID,
+ 		.flags = IORESOURCE_IRQ,
+ 	},
+ };
+ 
+-static struct platform_device mt6575_spi_device = {
+-	.name = "mt6575_spi",
+-	.num_resources = ARRAY_SIZE(mt6575_spi_resources),
+-	.resource=mt6575_spi_resources
++static struct platform_device mt_spi_device = {
++	.name = "mt-spi",
++	.num_resources = ARRAY_SIZE(mt_spi_resources),
++	.resource=mt_spi_resources
+ };
+ 
+-static struct spi_board_info spi_board_devs[] __initdata = {
+-	[0] = {
+-        	.modalias="spidev",
+-		.bus_num = 0,
+-		.chip_select=0,
+-		.mode = SPI_MODE_3,
+-	},
+-};
++//static struct spi_board_info spi_board_devs[] __initdata = {
++//	[0] = {
++//        	.modalias="spidev",
++//		.bus_num = 0,
++//		.chip_select=0,
++//		.mode = SPI_MODE_3,
++//	},
++//};
+ #endif
+ 
+ #if defined(CONFIG_MTK_ACCDET)
+@@ -444,7 +525,7 @@
+ #endif
+ #if defined(MTK_TVOUT_SUPPORT)
+ 
+-static struct resource mt6575_TVOUT_resource[] = {
++static struct resource mt6577_TVOUT_resource[] = {
+     [0] = {//TVC
+         .start = TVC_BASE,
+         .end   = TVC_BASE + 0x78,
+@@ -462,27 +543,27 @@
+     },
+ };
+ 
+-static u64 mt6575_TVOUT_dmamask = ~(u32)0;
++static u64 mt6577_TVOUT_dmamask = ~(u32)0;
+ 
+-static struct platform_device mt6575_TVOUT_dev = {
++static struct platform_device mt6577_TVOUT_dev = {
+ 	.name		  = "TV-out",
+ 	.id		  = 0,
+-	.num_resources	  = ARRAY_SIZE(mt6575_TVOUT_resource),
+-	.resource	  = mt6575_TVOUT_resource,
++	.num_resources	  = ARRAY_SIZE(mt6577_TVOUT_resource),
++	.resource	  = mt6577_TVOUT_resource,
+ 	.dev              = {
+-		.dma_mask = &mt6575_TVOUT_dmamask,
++		.dma_mask = &mt6577_TVOUT_dmamask,
+ 		.coherent_dma_mask = 0xffffffffUL
+ 	}
+ };
+ #endif
+-static struct platform_device mt6575_device_sd[] =
++static struct platform_device mt6577_device_sd[] =
+ {
+ #if defined(CFG_DEV_MSDC0)
+     {
+         .name           = "mtk-sd",
+         .id             = 0,
+-        .num_resources  = ARRAY_SIZE(mt6575_resource_sd0),
+-        .resource       = mt6575_resource_sd0,
++        .num_resources  = ARRAY_SIZE(mt6577_resource_sd0),
++        .resource       = mt6577_resource_sd0,
+         .dev = {
+             .platform_data = &msdc0_hw,
+         },
+@@ -492,8 +573,8 @@
+     {
+         .name           = "mtk-sd",
+         .id             = 1,
+-        .num_resources  = ARRAY_SIZE(mt6575_resource_sd1),
+-        .resource       = mt6575_resource_sd1,
++        .num_resources  = ARRAY_SIZE(mt6577_resource_sd1),
++        .resource       = mt6577_resource_sd1,
+         .dev = {
+             .platform_data = &msdc1_hw,
+         },
+@@ -503,8 +584,8 @@
+     {
+         .name           = "mtk-sd",
+         .id             = 2,
+-        .num_resources  = ARRAY_SIZE(mt6575_resource_sd2),
+-        .resource       = mt6575_resource_sd2,
++        .num_resources  = ARRAY_SIZE(mt6577_resource_sd2),
++        .resource       = mt6577_resource_sd2,
+         .dev = {
+             .platform_data = &msdc2_hw,
+         },
+@@ -514,8 +595,8 @@
+     {
+         .name           = "mtk-sd",
+         .id             = 3,
+-        .num_resources  = ARRAY_SIZE(mt6575_resource_sd3),
+-        .resource       = mt6575_resource_sd3,
++        .num_resources  = ARRAY_SIZE(mt6577_resource_sd3),
++        .resource       = mt6577_resource_sd3,
+         .dev = {
+             .platform_data = &msdc3_hw,
+         },
+@@ -524,11 +605,11 @@
+ };
+ 
+ /*=======================================================================*/
+-/* MT6575 Keypad                                                         */
++/* MT6577 Keypad                                                         */
+ /*=======================================================================*/
+ #ifdef CONFIG_MTK_KEYPAD
+ static struct platform_device kpd_pdev = {
+-	.name	= "mt6575-kpd",
++	.name	= "mtk-kpd",
+ 	.id	= -1,
+ };
+ #endif
+@@ -538,7 +619,7 @@
+ /* MT6573 RFKill module (BT and WLAN)                                             */
+ /*=======================================================================*/
+ /* MT66xx RFKill BT */
+-struct platform_device mt6575_device_rfkill = {
++struct platform_device mt6577_device_rfkill = {
+     .name   = "mt-rfkill",
+     .id     = -1,
+ };
+@@ -555,7 +636,7 @@
+ #endif
+ 
+ /*=======================================================================*/
+-/* MT6575 Touch Panel                                                    */
++/* MT6577 Touch Panel                                                    */
+ /*=======================================================================*/
+ static struct platform_device mtk_tpd_dev = {
+     .name = "mtk-tpd",
+@@ -563,7 +644,7 @@
+ };
+ 
+ /*=======================================================================*/
+-/* MT6575 ofn                                                           */
++/* MT6577 ofn                                                           */
+ /*=======================================================================*/
+ #if defined(CUSTOM_KERNEL_OFN)
+ static struct platform_device ofn_driver =
+@@ -574,7 +655,7 @@
+ #endif
+ 
+ /*=======================================================================*/
+-/* MT6575 CPUFreq                                                         */
++/* MT6577 CPUFreq                                                         */
+ /*=======================================================================*/
+ #ifdef CONFIG_CPU_FREQ
+ static struct platform_device cpufreq_pdev = {
+@@ -584,7 +665,7 @@
+ #endif
+ 
+ /*=======================================================================*/
+-/* MT6575 Thermal Controller module                                      */
++/* MT6577 Thermal Controller module                                      */
+ /*=======================================================================*/
+ struct platform_device thermal_pdev = {
+     .name = "mtk-thermal",
+@@ -592,7 +673,7 @@
+ };
+ 
+ /*=======================================================================*/
+-/* MT6575 USIF-DUMCHAR                                                          */
++/* MT6577 USIF-DUMCHAR                                                          */
+ /*=======================================================================*/
+ 
+ static struct platform_device dummychar_device =
+@@ -602,12 +683,12 @@
+ };
+ 
+ /*=======================================================================*/
+-/* MT6575 NAND                                                           */
++/* MT6577 NAND                                                           */
+ /*=======================================================================*/
+ #if defined(CONFIG_MTK_MTD_NAND)
+ #define NFI_base    NFI_BASE//0x80032000
+ #define NFIECC_base NFIECC_BASE//0x80038000
+-static struct resource mt6575_resource_nand[] = {
++static struct resource mt6577_resource_nand[] = {
+ 	{
+ 		.start		= NFI_base,
+ 		.end		= NFI_base + 0x1A0,
+@@ -619,22 +700,22 @@
+ 		.flags		= IORESOURCE_MEM,
+ 	},
+ 	{
+-		.start		= MT6575_NFI_IRQ_ID,
++		.start		= MT6577_NFI_IRQ_ID,
+ 		.flags		= IORESOURCE_IRQ,
+ 	},
+ 	{
+-		.start		= MT6575_NFIECC_IRQ_ID,
++		.start		= MT6577_NFIECC_IRQ_ID,
+ 		.flags		= IORESOURCE_IRQ,
+ 	},
+ };
+ 
+-static struct platform_device mt6575_nand_dev = {
+-    .name = "mt6575-nand",
++static struct platform_device mt6577_nand_dev = {
++    .name = "mt6577-nand",
+     .id   = 0,
+-   	.num_resources	= ARRAY_SIZE(mt6575_resource_nand),
+-   	.resource		= mt6575_resource_nand,
++   	.num_resources	= ARRAY_SIZE(mt6577_resource_nand),
++   	.resource		= mt6577_resource_nand,
+     .dev            = {
+-        .platform_data = &mt6575_nand_hw,
++        .platform_data = &mt6577_nand_hw,
+     },
+ };
+ #endif
+@@ -653,82 +734,71 @@
+ };
+ 
+ /*=======================================================================*/
+-/* MT6575 I2C                                                            */
++/* MTK I2C                                                            */
+ /*=======================================================================*/
+-static struct i2c_board_info __initdata i2c_devs0[]={
+-//	{ I2C_BOARD_INFO("ADXL345", 0x53),},
+-//	{ I2C_BOARD_INFO("A320", 0x57),},
+-//	{ I2C_BOARD_INFO("ami304", (0x1E>>1)),},
+-//	{ I2C_BOARD_INFO("CM3623", (0x92>>1)),},
+-//	{ I2C_BOARD_INFO("MPU3000", (0xD0>>1)),},
+-//	{ I2C_BOARD_INFO("mtk-tpd", (0xBA>>1)),},
+-		{ I2C_BOARD_INFO("fan5405", (0xd4>>1)),},		
+-};
++
+ static struct i2c_board_info __initdata i2c_devs1[]={
+-	{ I2C_BOARD_INFO("kd_camera_hw", 0xfe>>1), },
+-	{ I2C_BOARD_INFO("FM50AF", 0x18), },
+-	{ I2C_BOARD_INFO("dummy_eeprom", 0xA0>>1),},
+-	{ I2C_BOARD_INFO("EEPROM_S24CS64A", 0xAA>>1),},
+-	{ I2C_BOARD_INFO("MATV_I2C", 0x41), },
+-};
+-static struct i2c_board_info __initdata i2c_devs2[]={
+-	{ I2C_BOARD_INFO("mt6329_pmic", 0x60), },
+-	{ I2C_BOARD_INFO("mt6329_pmic_bank1", 0x61), },
++	//{ I2C_BOARD_INFO("kd_camera_hw", 0xfe>>1), },
++	//{ I2C_BOARD_INFO("FM50AF", 0x18), },
++	//{ I2C_BOARD_INFO("dummy_eeprom", 0xA0>>1),},
++	//{ I2C_BOARD_INFO("EEPROM_S24CS64A", 0xAA>>1),},
++	///{ I2C_BOARD_INFO("MATV_I2C", 0x41), },
+ };
+-static struct resource mt6575_resource_i2c1[] = {
++
++static struct resource mt_resource_i2c1[] = {
+     {
+         .start  = I2C0_BASE,
+         .end    = I2C0_BASE + 0x70,
+         .flags  = IORESOURCE_MEM,
+     },
+     {
+-        .start  = MT6575_I2C0_IRQ_ID,
++        .start  = MT6577_I2C0_IRQ_ID,
+         .flags  = IORESOURCE_IRQ,
+     },
+ };
+ 
+-static struct resource mt6575_resource_i2c2[] = {
++static struct resource mt_resource_i2c2[] = {
+     {
+         .start  = I2C1_BASE,
+         .end    = I2C1_BASE + 0x70,
+         .flags  = IORESOURCE_MEM,
+     },
+     {
+-        .start  = MT6575_I2C1_IRQ_ID,
++        .start  = MT6577_I2C1_IRQ_ID,
+         .flags  = IORESOURCE_IRQ,
+     },
+ };
+ 
+-static struct resource mt6575_resource_i2c3[] = {
++static struct resource mt_resource_i2c3[] = {
+     {
+         .start  = I2C2_BASE,
+         .end    = I2C2_BASE + 0xC0,
+         .flags  = IORESOURCE_MEM,
+     },
+     {
+-        .start  = MT6575_I2C_DUAL_IRQ_ID,
++        .start  = MT6577_I2C_DUAL_IRQ_ID,
+         .flags  = IORESOURCE_IRQ,
+     },
+ };
+ 
+-static struct platform_device mt6575_device_i2c[] = {
++static struct platform_device mt_device_i2c[] = {
+     {
+-        .name           = "mt6575-i2c",
++        .name           = "mt-i2c",
+         .id             = 0,
+-        .num_resources  = ARRAY_SIZE(mt6575_resource_i2c1),
+-        .resource       = mt6575_resource_i2c1,
++        .num_resources  = ARRAY_SIZE(mt_resource_i2c1),
++        .resource       = mt_resource_i2c1,
+     },
+     {
+-        .name           = "mt6575-i2c",
++        .name           = "mt-i2c",
+         .id             = 1,
+-        .num_resources  = ARRAY_SIZE(mt6575_resource_i2c2),
+-        .resource       = mt6575_resource_i2c2,
++        .num_resources  = ARRAY_SIZE(mt_resource_i2c2),
++        .resource       = mt_resource_i2c2,
+     },
+     {
+-        .name           = "mt6575-i2c",
++        .name           = "mt-i2c",
+         .id             = 2,
+-        .num_resources  = ARRAY_SIZE(mt6575_resource_i2c3),
+-        .resource       = mt6575_resource_i2c3,
++        .num_resources  = ARRAY_SIZE(mt_resource_i2c3),
++        .resource       = mt_resource_i2c3,
+     },
+ };
+ 
+@@ -745,11 +815,13 @@
+ 	}
+ };
+ 
++
++
+ /*=======================================================================*/
+-/* MT6575 MDP                                                            */
++/* MT6577 MDP                                                            */
+ /*=======================================================================*/
+-#if 1 //defined(CONFIG_MDP_MT6575)
+-static struct resource mt6575_MDP_resource[] = {
++#if 1 //defined(CONFIG_MDP_MT6577)
++static struct resource mt6577_MDP_resource[] = {
+ 
+     [0] = {//MID_BRZ
+         .start = BRZ_BASE,
+@@ -861,15 +933,15 @@
+     #endif
+ };
+ 
+-static u64 mt6575_MDP_dmamask = ~(u32)0;
++static u64 mt6577_MDP_dmamask = ~(u32)0;
+ 
+-static struct platform_device mt6575_MDP_dev = {
+-	.name		    = "mt6575-MDP",
++static struct platform_device mt6577_MDP_dev = {
++	.name		    = "mt6575-MDP", /* FIXME. Sync to MHAL and init.rc */
+ 	.id		        = 0,
+-	.num_resources	= ARRAY_SIZE(mt6575_MDP_resource),
+-	.resource	    = mt6575_MDP_resource,
++	.num_resources	= ARRAY_SIZE(mt6577_MDP_resource),
++	.resource	    = mt6577_MDP_resource,
+ 	.dev            = {
+-		.dma_mask = &mt6575_MDP_dmamask,
++		.dma_mask = &mt6577_MDP_dmamask,
+ 		.coherent_dma_mask = 0xffffffffUL
+ 	}
+ };
+@@ -923,10 +995,10 @@
+ #endif
+ 
+ /*=======================================================================*/
+-/* MT6575 SYSRAM                                                         */
++/* MT6577 SYSRAM                                                         */
+ /*=======================================================================*/
+-static struct platform_device mt6575_SYSRAM_dev = {
+-	.name	= "mt6575-SYSRAM",
++static struct platform_device mt6577_SYSRAM_dev = {
++	.name	= "camera-sysram", /* FIXME. Sync to driver, init.rc, MHAL */
+ 	.id     = 0,
+ };
+ 
+@@ -937,6 +1009,7 @@
+ static void cmdline_filter(struct tag *cmdline_tag, char *default_cmdline)
+ {
+ 	const char *desired_cmds[] = {
++	                                 "rdinit=",
+                                      "nand_manf_id=",
+                                      "nand_dev_id=",
+                                      "uboot_ver=",
+@@ -985,8 +1058,9 @@
+         use_bl_fb++;
+ 	return 0;
+ }
+-void mt6575_fixup(struct machine_desc *desc, struct tag *tags, char **cmdline, struct meminfo *mi)
++void mt6577_fixup(struct machine_desc *desc, struct tag *tags, char **cmdline, struct meminfo *mi)
+ {
++#ifndef CONFIG_MT6577_FPGA
+     struct tag *cmdline_tag = NULL;
+     struct tag *reserved_mem_bank_tag = NULL;
+     struct tag *none_tag = NULL;
+@@ -1076,9 +1150,23 @@
+ 	none_tag = tags;
+ 
+     if (cmdline_tag != NULL) {
++#ifdef CONFIG_FIQ_DEBUGGER
++        char *console_ptr;
++        int uart_port;
++#endif
+ 
+         // This function may modify ttyMT3 to ttyMT0 if needed
+         adjust_kernel_cmd_line_setting_for_console(cmdline_tag->u.cmdline.cmdline, *cmdline);
++#ifdef CONFIG_FIQ_DEBUGGER
++        if ((console_ptr=strstr(*cmdline, "ttyMT")) != 0)
++        {
++            uart_port = console_ptr[5] - '0';
++            if (uart_port > 3)
++                uart_port = -1;
++
++            fiq_uart_fixup(uart_port);
++        }
++#endif
+         cmdline_filter(cmdline_tag, *cmdline);
+         /* Use the default cmdline */
+         memcpy((void*)cmdline_tag,
+@@ -1086,18 +1174,19 @@
+                /* ATAG_NONE actual size */
+                (uint32_t)(none_tag) - (uint32_t)(tag_next(cmdline_tag)) + 8);
+     }
++#endif
+ }
+ 
+ //*==============================================
+ //auxadc device
+ //*==============================================
+-struct platform_device MT6575_auxadc_device = {
+-    .name   = "mt6575-auxadc",
++struct platform_device MT6577_auxadc_device = {
++    .name   = "mt6577-auxadc",
+     .id     = -1,
+ };
+ 
+ /*=======================================================================*/
+-/* MT6575 sensor module                                                  */
++/* MT6577 sensor module                                                  */
+ /*=======================================================================*/
+ struct platform_device sensor_gsensor = {
+ 	.name	       = "gsensor",
+@@ -1134,7 +1223,7 @@
+ 	.id            = -1,
+ };
+ /*=======================================================================*/
+-/* MT6575 ISP                                                            */
++/* MT6577 ISP                                                            */
+ /*=======================================================================*/
+ static struct resource mt_resource_isp[] = {
+     [0] = { // ISP configuration
+@@ -1148,14 +1237,14 @@
+         .flags = IORESOURCE_MEM,
+     },
+     [2] = { // ISP IRQ
+-        .start = MT6575_CAM_IRQ_LINE,
++        .start = MT6577_CAM_IRQ_LINE,
+         .flags = IORESOURCE_IRQ,
+     }
+ };
+ static u64 mt_isp_dmamask = ~(u32) 0;
+ //
+ static struct platform_device mt_isp_dev = {
+-	.name		   = "mt-isp",
++	.name		   = "camera-isp",
+ 	.id		       = 0,
+ 	.num_resources = ARRAY_SIZE(mt_resource_isp),
+ 	.resource	   = mt_resource_isp,
+@@ -1166,7 +1255,7 @@
+ };
+ 
+ /*=======================================================================*/
+-/* MT6575 EIS                                                            */
++/* MT6577 EIS                                                            */
+ /*=======================================================================*/
+ static struct resource mt_resource_eis[] = {
+     [0] = { // EIS configuration
+@@ -1178,7 +1267,7 @@
+ static u64 mt_eis_dmamask = ~(u32) 0;
+ //
+ static struct platform_device mt_eis_dev = {
+-	.name		   = "mt-eis",
++	.name		   = "camera-eis",
+ 	.id		       = 0,
+ 	.num_resources = ARRAY_SIZE(mt_resource_eis),
+ 	.resource	   = mt_resource_eis,
+@@ -1205,20 +1294,52 @@
+ 	.id		  = -1,
+ };
+ /*=======================================================================*/
+-/* MT6575 jogball                                                        */
++/* MT6577 jogball                                                        */
+ /*=======================================================================*/
+ #ifdef CONFIG_MOUSE_PANASONIC_EVQWJN
+ static struct platform_device jbd_pdev = {
+-	.name = "mt6575-jb",
++	.name = "mt6577-jb",
+ 	.id = -1,
+ };
+ #endif
+ 
++#if defined(CONFIG_BT_BRCM_SLEEP)
++#define MT_WAKE_BT_IO				84
++#define BT_WAKE_MT_IO				76
++#define BT_WAKE_MT_IRQ				1
++static struct resource bluesleep_resources[] = {
++	{
++		.name	= "gpio_host_wake",
++		.start	= BT_WAKE_MT_IO,
++		.end	= BT_WAKE_MT_IO,
++		.flags	= IORESOURCE_IO,
++	},
++	{
++		.name	= "gpio_ext_wake",
++		.start	= MT_WAKE_BT_IO,
++		.end	= MT_WAKE_BT_IO,
++		.flags	= IORESOURCE_IO,
++	},
++	{
++		.name	= "host_wake",
++		.start	= BT_WAKE_MT_IRQ,
++		.end	= BT_WAKE_MT_IRQ,
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device brcm_bluesleep_device = {
++	.name = "bluesleep",
++	.id		= -1,
++	.num_resources	= ARRAY_SIZE(bluesleep_resources),
++	.resource	= bluesleep_resources,
++};
++#endif //CONFIG_BT_BRCM_SLEEP
+ /*=======================================================================*/
+-/* MT6575 Resource Manager                                                         */
++/* MT6577 Resource Manager                                                         */
+ /*=======================================================================*/
+ static struct platform_device res_mgr_dev = {
+-	.name	= "Res_Mgr",
++	.name	= "camera-resmgr",
+ 	.id     = -1,
+ };
+ 
+@@ -1228,31 +1349,55 @@
+ };
+ 
+ /*=======================================================================*/
+-/* MT6575 Board Device Initialization                                    */
++/* MT6577 Board Device Initialization                                    */
+ /*=======================================================================*/
+-__init int mt6575_board_init(void)
++__init int mt6577_board_init(void)
+ {
+     int i = 0, retval = 0;
+ 
++#if defined(MTK_DT_SUPPORT) && (!defined(EVDO_DT_SUPPORT))
++    // Note: MUST init before USB and UART driver if this driver enable
++    for (i = 0; i < ARRAY_SIZE(emd_chr_devs); i++){
++        retval = platform_device_register(&emd_chr_devs[i]);
++        if (retval != 0){
++            printk("[emd] Regsiter emd_char_device %d failed\n", i);
++            return retval;
++        }
++    }
++#endif
++
+ #if defined(CONFIG_MTK_SERIAL)
+-    for (i = 0; i < ARRAY_SIZE(mt6575_device_uart); i++){
+-        retval = platform_device_register(&mt6575_device_uart[i]);
++    for (i = 0; i < ARRAY_SIZE(mtk_device_uart); i++){
++        retval = platform_device_register(&mtk_device_uart[i]);
+         if (retval != 0){
+             return retval;
+         }
+     }
+ #endif
+ 
++#if 0
++#ifdef CONFIG_FIQ_DEBUGGER
++	retval = platform_device_register(&mt_fiq_debugger);
++	if (retval != 0){
++		return retval;
++	}
++#endif
++#endif
++
+ 	{
+ 		uint64_t key;
+ #if defined(CONFIG_MTK_USB_UNIQUE_SERIAL)
+-		key = (uint32_t)__raw_readl(EFUSE_CTR_BASE + 0x144);
+-		key = (key << 32) | ((uint32_t)__raw_readl(EFUSE_CTR_BASE + 0x140));
++		if((g_boot_mode==META_BOOT)||(g_boot_mode==ATE_FACTORY_BOOT)||(g_boot_mode==ADVMETA_BOOT))
++			key=0;
++		else{
++			key = (uint32_t)__raw_readl(EFUSE_CTR_BASE + 0x144);
++			key = (key << 32) | ((uint32_t)__raw_readl(EFUSE_CTR_BASE + 0x140));
++		}
+ #else
+ 		key = 0;
+ #endif
+ 		if (key != 0)
+-			get_serial(key, 6575, serial_number);
++			get_serial(key, 6577, serial_number);
+ 		else
+ 			memcpy(serial_number, "0123456789ABCDEF", 16);
+ 
+@@ -1263,13 +1408,13 @@
+ 	}
+ 
+ #if defined(CONFIG_MTK_MTD_NAND)
+-    retval = platform_device_register(&mt6575_nand_dev);
++    retval = platform_device_register(&mt6577_nand_dev);
+     if (retval != 0) {
+         printk(KERN_ERR "register nand device fail\n");
+         return retval;
+     }
+ #endif
+-
++//		printk(KERN_ALERT"[GPIO]%5d<%s> Register gpio devices\n", __LINE__, __func__);
+ 	retval = platform_device_register(&gpio_dev);
+ 	if (retval != 0){
+ 		return retval;
+@@ -1283,22 +1428,24 @@
+ #endif
+ 
+ #if defined(CONFIG_MTK_I2C)
+-	i2c_register_board_info(0, i2c_devs0, ARRAY_SIZE(i2c_devs0));
++//	i2c_register_board_info(0, i2c_devs0, ARRAY_SIZE(i2c_devs0));
+ 	i2c_register_board_info(1, i2c_devs1, ARRAY_SIZE(i2c_devs1));
+-	i2c_register_board_info(2, i2c_devs2, ARRAY_SIZE(i2c_devs2));
+-		for (i = 0; i < ARRAY_SIZE(mt6575_device_i2c); i++){
+-			retval = platform_device_register(&mt6575_device_i2c[i]);
++//	i2c_register_board_info(2, i2c_devs2, ARRAY_SIZE(i2c_devs2));
++		for (i = 0; i < ARRAY_SIZE(mt_device_i2c); i++){
++			retval = platform_device_register(&mt_device_i2c[i]);
+ 			if (retval != 0){
+ 				return retval;
+ 			}
+ 		}
+ #endif
+ #if defined(CONFIG_MTK_MMC)
+-    for (i = 0; i < ARRAY_SIZE(mt6575_device_sd); i++){
+-        retval = platform_device_register(&mt6575_device_sd[i]);
++    for (i = 0; i < ARRAY_SIZE(mt6577_device_sd); i++){
++        retval = platform_device_register(&mt6577_device_sd[i]);
+ 			if (retval != 0){
++				printk("[%s]: failed to register mt6577_device_sd[%d]\n", __func__, i);
+ 				return retval;
+ 			}
++			printk("[%s]: successed to register mt6577_device_sd[%d]\n", __func__, i);
+ 		}
+ #endif
+ 
+@@ -1361,7 +1508,7 @@
+     printk("FB start: 0x%x end: 0x%x\n", resource_fb[0].start,
+                                          resource_fb[0].end);
+ 
+-    retval = platform_device_register(&mt6575_device_fb);
++    retval = platform_device_register(&mt6577_device_fb);
+     if (retval != 0) {
+          return retval;
+     }
+@@ -1373,7 +1520,6 @@
+ 		return retval;
+ 	printk("bei:device LEDS register\n");
+ #endif
+-
+ #ifdef MTK_HDMI_SUPPORT
+ 	retval = platform_device_register(&mtk_hdmi_dev);
+ 	if (retval != 0){
+@@ -1382,9 +1528,9 @@
+ 
+ #endif
+ 
+-#if defined(CONFIG_MT6575_SPI)
+-    spi_register_board_info(spi_board_devs, ARRAY_SIZE(spi_board_devs));
+-    platform_device_register(&mt6575_spi_device);
++#if defined(CONFIG_MTK_SPI)
++//    spi_register_board_info(spi_board_devs, ARRAY_SIZE(spi_board_devs));
++    platform_device_register(&mt_spi_device);
+ #endif
+ 
+ 
+@@ -1395,7 +1541,7 @@
+     }
+ 
+ #if defined(MTK_TVOUT_SUPPORT)
+-    retval = platform_device_register(&mt6575_TVOUT_dev);
++    retval = platform_device_register(&mt6577_TVOUT_dev);
+ 	printk("register TV-out device\n");
+     if (retval != 0) {
+          return retval;
+@@ -1421,19 +1567,19 @@
+ 
+ #endif
+ 
+-#if 1 //defined(CONFIG_MDP_MT6575)
++#if 1 //defined(CONFIG_MDP_MT6577)
+     //printk("[MDP]platform_device_register\n\r");
+-    retval = platform_device_register(&mt6575_MDP_dev);
++    retval = platform_device_register(&mt6577_MDP_dev);
+     if(retval != 0){
+         return retval;
+     }
+ #endif
+ 
+ #if 1
+-  retval = platform_device_register(&MT6575_auxadc_device);
++  retval = platform_device_register(&MT6577_auxadc_device);
+   if(retval != 0)
+   {
+-     printk("****[mt6575_auxadc_driver] Unable to device register(%d)\n", retval);
++     printk("****[mt6577_auxadc_driver] Unable to device register(%d)\n", retval);
+ 	 return retval;
+   }
+ #endif
+@@ -1489,11 +1635,20 @@
+ #endif
+ #endif
+ 
++#if defined(CONFIG_MTK_USBFSH)    
++	printk("register musbfsh device\n");    
++	retval = platform_device_register(&mt_usb11_dev);
++	if (retval != 0){
++		printk("register musbfsh device fail!\n"); 
++		return retval;    
++	}
++#endif
+ 
+ #if defined(CONFIG_USB_MTK_HDRC)
+ 	printk("mt_device_usb register\n");
+ 	retval = platform_device_register(&mt_device_usb);
+ 	if (retval != 0){
++	printk("mt_device_usb register fail\n");
+         return retval;
+ 	}	
+ #endif
+@@ -1516,6 +1671,14 @@
+         return retval;
+     }
+ #endif
++#if defined(CONFIG_BT_BRCM_SLEEP)
++//[WJ ADD]
++	retval = platform_device_register(&brcm_bluesleep_device);
++	if (retval != 0){
++		return retval;
++	}
++#endif //CONFIG_BT_BRCM_SLEEP
++
+ #if defined(CUSTOM_KERNEL_OFN)
+     retval = platform_device_register(&ofn_driver);
+     if (retval != 0){
+@@ -1589,7 +1752,7 @@
+     }
+ #endif
+ //
+-#if 1 //defined(CONFIG_ISP_MT6575)
++#if 1 //defined(CONFIG_ISP_MT6577)
+     retval = platform_device_register(&mt_isp_dev);
+     if (retval != 0){
+         return retval;
+@@ -1604,14 +1767,14 @@
+ #endif
+ 
+ #ifdef CONFIG_RFKILL
+-    retval = platform_device_register(&mt6575_device_rfkill);
++    retval = platform_device_register(&mt6577_device_rfkill);
+     if (retval != 0){
+         return retval;
+     }
+ #endif
+ 
+ #if 1
+-	retval = platform_device_register(&mt6575_SYSRAM_dev);
++	retval = platform_device_register(&mt6577_SYSRAM_dev);
+ 	if (retval != 0){
+ 		return retval;
+ 	}
+@@ -1632,6 +1795,15 @@
+     return 0;
+ }
+ 
++/*
++ * is_pmem_range
++ * Input
++ *   base: buffer base physical address
++ *   size: buffer len in byte
++ * Return
++ *   1: buffer is located in pmem address range
++ *   0: buffer is out of pmem address range
++ */
+ int is_pmem_range(unsigned long *base, unsigned long size)
+ {
+         unsigned long start = (unsigned long)base;
+@@ -1652,16 +1824,18 @@
+ 
+ unsigned int get_memory_size (void)
+ {
+-    printk ("total size :0x%x-0x%x-0x%x\n", CONFIG_MAX_DRAM_SIZE_SUPPORT, TOTAL_RESERVED_MEM_SIZE, RESERVED_MEM_MODEM) ;
++    printk ("total size :0x%x-0x%x-0x%x\n", 
++            (unsigned int)(MAX_PFN + TOTAL_RESERVED_MEM_SIZE),
++            TOTAL_RESERVED_MEM_SIZE, RESERVED_MEM_MODEM) ;
+ 
+-    return (CONFIG_MAX_DRAM_SIZE_SUPPORT) - (TOTAL_RESERVED_MEM_SIZE) - (RESERVED_MEM_MODEM) ;
++    return (MAX_PFN) - (RESERVED_MEM_MODEM);
+ }
+ EXPORT_SYMBOL(get_memory_size) ;
+ 
+ 
+ unsigned int get_max_DRAM_size(void)
+ {
+-	return MAX_PFN + TOTAL_RESERVED_MEM_SIZE;
++	return  MAX_PFN + TOTAL_RESERVED_MEM_SIZE;
+ }
+ EXPORT_SYMBOL(get_max_DRAM_size);
+ 

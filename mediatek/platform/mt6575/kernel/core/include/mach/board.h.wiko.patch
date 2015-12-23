@@ -1,0 +1,49 @@
+--- board.h	2013-07-29 11:56:25.000000000 +0300
++++ board.h.wiko	2012-11-13 09:58:42.000000000 +0200
+@@ -1,10 +1,9 @@
+-
+ #ifndef __ARCH_ARM_MACH_BOARD_H
+ #define __ARCH_ARM_MACH_BOARD_H
+ 
+ #include <generated/autoconf.h>
+ #include <linux/pm.h>
+-//#include <mach/mt6575.h>
++//#include <mach/mt6577.h>
+ #include <board-custom.h>
+ 
+ typedef void (*sdio_irq_handler_t)(void*);  /* external irq handler */
+@@ -50,14 +49,14 @@
+     unsigned long  flags;            /* hardware capability flags */
+     unsigned long  data_pins;        /* data pins */
+     unsigned long  data_offset;      /* data address offset */
+-	
++
+     /* config gpio pull mode */
+     void (*config_gpio_pin)(int type, int pull);
+ 
+     /* external power control for card */
+     void (*ext_power_on)(void);
+     void (*ext_power_off)(void);
+-   
++
+     /* external sdio irq operations */
+     void (*request_sdio_eirq)(sdio_irq_handler_t sdio_irq_handler, void *data);
+     void (*enable_sdio_eirq)(void);
+@@ -87,7 +86,7 @@
+ extern struct mt3326_gps_hardware mt3326_gps_hw;
+ 
+ /* NAND driver */
+-struct mt6575_nand_host_hw {
++struct mt6577_nand_host_hw {
+     unsigned int nfi_bus_width;		    /* NFI_BUS_WIDTH */ 
+ 	unsigned int nfi_access_timing;		/* NFI_ACCESS_TIMING */  
+ 	unsigned int nfi_cs_num;			/* NFI_CS_NUM */
+@@ -97,7 +96,7 @@
+ 	unsigned int nand_ecc_bytes;
+ 	unsigned int nand_ecc_mode;
+ };
+-extern struct mt6575_nand_host_hw mt6575_nand_hw;
++extern struct mt6577_nand_host_hw mt6577_nand_hw;
+ 
+ #endif /* __ARCH_ARM_MACH_BOARD_H */
+ 

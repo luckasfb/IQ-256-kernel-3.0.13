@@ -1,0 +1,13 @@
+--- board-custom.h	2013-11-04 21:07:07.794848101 +0200
++++ board-custom.h.wiko	2012-11-13 09:50:44.000000000 +0200
+@@ -6,9 +6,7 @@
+ /*=======================================================================*/
+ /* MT6577 SD                                                             */
+ /*=======================================================================*/
+-// LuckAs disable
+-//#define CFG_DEV_MSDC0
+-// LuckAs end
++#define CFG_DEV_MSDC0
+ #define CFG_DEV_MSDC1
+ //#define CFG_DEV_MSDC2
+ #define CFG_DEV_MSDC3

@@ -1,0 +1,224 @@
+--- lcm_drv.h.orig	2013-02-27 11:02:38.000000000 +0200
++++ lcm_drv.h.ozzy	2013-10-18 15:01:00.000000000 +0300
+@@ -1,38 +1,3 @@
+-/*****************************************************************************
+-*  Copyright Statement:
+-*  --------------------
+-*  This software is protected by Copyright and the information contained
+-*  herein is confidential. The software may not be copied and the information
+-*  contained herein may not be used or disclosed except with the written
+-*  permission of MediaTek Inc. (C) 2008
+-*
+-*  BY OPENING THIS FILE, BUYER HEREBY UNEQUIVOCALLY ACKNOWLEDGES AND AGREES
+-*  THAT THE SOFTWARE/FIRMWARE AND ITS DOCUMENTATIONS ("MEDIATEK SOFTWARE")
+-*  RECEIVED FROM MEDIATEK AND/OR ITS REPRESENTATIVES ARE PROVIDED TO BUYER ON
+-*  AN "AS-IS" BASIS ONLY. MEDIATEK EXPRESSLY DISCLAIMS ANY AND ALL WARRANTIES,
+-*  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED WARRANTIES OF
+-*  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE OR NONINFRINGEMENT.
+-*  NEITHER DOES MEDIATEK PROVIDE ANY WARRANTY WHATSOEVER WITH RESPECT TO THE
+-*  SOFTWARE OF ANY THIRD PARTY WHICH MAY BE USED BY, INCORPORATED IN, OR
+-*  SUPPLIED WITH THE MEDIATEK SOFTWARE, AND BUYER AGREES TO LOOK ONLY TO SUCH
+-*  THIRD PARTY FOR ANY WARRANTY CLAIM RELATING THERETO. MEDIATEK SHALL ALSO
+-*  NOT BE RESPONSIBLE FOR ANY MEDIATEK SOFTWARE RELEASES MADE TO BUYER'S
+-*  SPECIFICATION OR TO CONFORM TO A PARTICULAR STANDARD OR OPEN FORUM.
+-*
+-*  BUYER'S SOLE AND EXCLUSIVE REMEDY AND MEDIATEK'S ENTIRE AND CUMULATIVE
+-*  LIABILITY WITH RESPECT TO THE MEDIATEK SOFTWARE RELEASED HEREUNDER WILL BE,
+-*  AT MEDIATEK'S OPTION, TO REVISE OR REPLACE THE MEDIATEK SOFTWARE AT ISSUE,
+-*  OR REFUND ANY SOFTWARE LICENSE FEES OR SERVICE CHARGE PAID BY BUYER TO
+-*  MEDIATEK FOR SUCH MEDIATEK SOFTWARE AT ISSUE.
+-*
+-*  THE TRANSACTION CONTEMPLATED HEREUNDER SHALL BE CONSTRUED IN ACCORDANCE
+-*  WITH THE LAWS OF THE STATE OF CALIFORNIA, USA, EXCLUDING ITS CONFLICT OF
+-*  LAWS PRINCIPLES.  ANY DISPUTES, CONTROVERSIES OR CLAIMS ARISING THEREOF AND
+-*  RELATED THERETO SHALL BE SETTLED BY ARBITRATION IN SAN FRANCISCO, CA, UNDER
+-*  THE RULES OF THE INTERNATIONAL CHAMBER OF COMMERCE (ICC).
+-*
+-*****************************************************************************/
+-
+ #ifndef __LCM_DRV_H__
+ #define __LCM_DRV_H__
+ 
+@@ -210,6 +175,8 @@
+ {
+ 	LCM_ONE_LANE = 1,
+ 	LCM_TWO_LANE = 2,
++    LCM_THREE_LANE = 3,
++    LCM_FOUR_LANE = 4,
+ } LCM_LANE_NUM;
+ 
+ 
+@@ -244,6 +211,61 @@
+ } LCM_PS_TYPE;
+ 
+ 
++typedef enum
++{
++    LCM_DSI_6589_PLL_CLOCK_NULL	  = 0,
++    LCM_DSI_6589_PLL_CLOCK_201_5  = 1,
++    LCM_DSI_6589_PLL_CLOCK_208	  = 2,
++    LCM_DSI_6589_PLL_CLOCK_214_5  = 3,
++    LCM_DSI_6589_PLL_CLOCK_221	  = 4,
++    LCM_DSI_6589_PLL_CLOCK_227_5  = 5,
++    LCM_DSI_6589_PLL_CLOCK_234	  = 6,
++    LCM_DSI_6589_PLL_CLOCK_240_5  = 7,
++    LCM_DSI_6589_PLL_CLOCK_247	  = 8,
++    LCM_DSI_6589_PLL_CLOCK_253_5  = 9,
++    LCM_DSI_6589_PLL_CLOCK_260	  = 10,
++    LCM_DSI_6589_PLL_CLOCK_266_5  = 11,
++    LCM_DSI_6589_PLL_CLOCK_273	  = 12,
++    LCM_DSI_6589_PLL_CLOCK_279_5  = 13,
++    LCM_DSI_6589_PLL_CLOCK_286	  = 14,
++    LCM_DSI_6589_PLL_CLOCK_292_5  = 15,
++    LCM_DSI_6589_PLL_CLOCK_299	  = 16,
++    LCM_DSI_6589_PLL_CLOCK_305_5  = 17,
++    LCM_DSI_6589_PLL_CLOCK_312	  = 18,
++    LCM_DSI_6589_PLL_CLOCK_318_5  = 19,
++    LCM_DSI_6589_PLL_CLOCK_325	  = 20,
++    LCM_DSI_6589_PLL_CLOCK_331_5  = 21,
++    LCM_DSI_6589_PLL_CLOCK_338	  = 22,
++    LCM_DSI_6589_PLL_CLOCK_344_5  = 23,
++    LCM_DSI_6589_PLL_CLOCK_351	  = 24,
++    LCM_DSI_6589_PLL_CLOCK_357_5  = 25,
++    LCM_DSI_6589_PLL_CLOCK_364	  = 26,
++    LCM_DSI_6589_PLL_CLOCK_370_5  = 27,
++    LCM_DSI_6589_PLL_CLOCK_377	  = 28,
++    LCM_DSI_6589_PLL_CLOCK_383_5  = 29,
++    LCM_DSI_6589_PLL_CLOCK_390	  = 30,
++    LCM_DSI_6589_PLL_CLOCK_396_5  = 31,
++    LCM_DSI_6589_PLL_CLOCK_403	  = 32,
++    LCM_DSI_6589_PLL_CLOCK_409_5  = 33,
++    LCM_DSI_6589_PLL_CLOCK_416	  = 34,
++    LCM_DSI_6589_PLL_CLOCK_422_5  = 35,
++    LCM_DSI_6589_PLL_CLOCK_429	  = 36,
++    LCM_DSI_6589_PLL_CLOCK_435_5  = 37,
++    LCM_DSI_6589_PLL_CLOCK_442	  = 38,
++    LCM_DSI_6589_PLL_CLOCK_448_5  = 39,
++    LCM_DSI_6589_PLL_CLOCK_455	  = 40,
++    LCM_DSI_6589_PLL_CLOCK_461_5  = 41,
++    LCM_DSI_6589_PLL_CLOCK_468	  = 42,
++    LCM_DSI_6589_PLL_CLOCK_474_5  = 43,
++    LCM_DSI_6589_PLL_CLOCK_481	  = 44,
++    LCM_DSI_6589_PLL_CLOCK_487_5  = 45,
++    LCM_DSI_6589_PLL_CLOCK_494	  = 46,
++    LCM_DSI_6589_PLL_CLOCK_500_5  = 47,
++    LCM_DSI_6589_PLL_CLOCK_507	  = 48,
++    LCM_DSI_6589_PLL_CLOCK_513_5  = 49,
++    LCM_DSI_6589_PLL_CLOCK_520	  = 50,
++} LCM_DSI_PLL_CLOCK;
++
+ // ---------------------------------------------------------------------------
+ 
+ typedef struct 
+@@ -327,10 +349,8 @@
+     LCM_DBI_TE_VS_WIDTH_CNT_DIV  te_vs_width_cnt_div;
+     
+     /* particular parameters for serial & parallel interface */
+-    union {
+         LCM_DBI_SERIAL_PARAMS serial;
+         LCM_DBI_PARALLEL_PARAMS parallel;
+-    };
+ } LCM_DBI_PARAMS;
+ 
+ 
+@@ -345,6 +365,8 @@
+     unsigned int mipi_pll_clk_ref;   // 0..1
+     unsigned int mipi_pll_clk_div1;  // 0..63
+     unsigned int mipi_pll_clk_div2;  // 0..15
++    unsigned int mipi_pll_clk_fbk_div;  //PCLK=> 8: 26MHz, 10: 35MHz, 12: 40MHz
++    unsigned int mipi_pll_clk_fbk_sel;
+     unsigned int dpi_clk_div;        // 2..32
+ 
+     unsigned int dpi_clk_duty;       // (dpi_clk_div - 1) .. 31
+@@ -369,6 +391,7 @@
+     unsigned int is_serial_output;
+ 	unsigned int i2x_en;
+ 	unsigned int i2x_edge;
++    unsigned int embsync;
+     /* intermediate buffers parameters */
+     unsigned int intermediat_buffer_num; // 2..3
+ 
+@@ -406,6 +429,7 @@
+ 	unsigned int		horizontal_sync_active;
+ 	unsigned int		horizontal_backporch;
+ 	unsigned int		horizontal_frontporch;
++    unsigned int		horizontal_blanking_pixel;
+ 	unsigned int		horizontal_active_pixel;
+ 
+ 	unsigned int		line_byte;
+@@ -434,14 +458,25 @@
+ 	unsigned char		CONT_DET;
+ 
+ 	unsigned char		CLK_HS_PRPR;
++    unsigned char		CLK_HS_POST;
++    unsigned char       DA_HS_EXIT;
++    unsigned char       CLK_HS_EXIT;
+ 
+ 	unsigned int		pll_div1;
+ 	unsigned int		pll_div2;	
++    unsigned int        fbk_div;
++    unsigned int		fbk_sel;
++    unsigned int		rg_bir;
++    unsigned int		rg_bic;
++    unsigned int		rg_bp;
++    LCM_DSI_PLL_CLOCK	PLL_CLOCK;
++    unsigned int		compatibility_for_nvk;
+ 	
+ 	unsigned int		lcm_int_te_monitor;
+ 	unsigned int		lcm_int_te_period;
+ 	
+ 	unsigned int		lcm_ext_te_monitor;
++    unsigned int		lcm_ext_te_enable;
+ 	
+ 	unsigned int		noncont_clock;
+ 	unsigned int		noncont_clock_period;
+@@ -459,18 +494,32 @@
+     unsigned int width;
+     unsigned int height;
+ 	unsigned int io_select_mode; //DBI or DPI should select IO mode according to chip spec
++
+     /* particular parameters */
+     LCM_DBI_PARAMS dbi;
+     LCM_DPI_PARAMS dpi;
+     LCM_DSI_PARAMS dsi;
++    unsigned int active_width;
++    unsigned int active_height;
+ } LCM_PARAMS;
+ 
+ 
+ // ---------------------------------------------------------------------------
+ 
++#define REGFLAG_ESCAPE_ID		(0x00)
++#define REGFLAG_DELAY_MS_V3		(0xFF)
++
++typedef struct {
++    unsigned char id;    
++    unsigned char cmd;
++    unsigned char count;
++    unsigned char para_list[128];
++} LCM_setting_table_V3;
++
+ typedef struct
+ {
+     void (*set_reset_pin)(unsigned int value);
++    void (*set_chip_select)(unsigned int value);
+     int  (*set_gpio_out)(unsigned int gpio, unsigned int value);
+ 
+     void (*udelay)(unsigned int us);
+@@ -480,6 +529,7 @@
+     void (*send_data)(unsigned int data);
+     unsigned int (*read_data)(void);
+ 
++    void (*dsi_set_cmdq_V3)(LCM_setting_table_V3 *para_list, unsigned int size, unsigned char force_update);
+ 	void (*dsi_set_cmdq_V2)(unsigned cmd, unsigned char count, unsigned char *para_list, unsigned char force_update);
+ 	void (*dsi_set_cmdq)(unsigned int *pdata, unsigned int queue_size, unsigned char force_update);
+ 	void (*dsi_write_cmd)(unsigned int cmd);
+@@ -522,7 +572,7 @@
+ /////////////ESD_RECOVERY//////////////////////
+     unsigned int (*esd_check)(void);
+     unsigned int  (*esd_recover)(void);
+-
++    unsigned int (*check_status)(void);
+ /////////////////////////////////////////////////
+ 
+ } LCM_DRIVER;

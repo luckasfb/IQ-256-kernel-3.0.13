@@ -1,0 +1,27 @@
+--- mt_bt.h	2013-03-06 11:09:31.000000000 +0200
++++ mt_bt.h.iq256	2012-11-28 12:05:26.000000000 +0200
+@@ -20,8 +20,8 @@
+  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+  */
+ 
+-#ifndef __ARCH_ARM_MACH_MT6575_INCLUDE_MACHINE_MT6575_BT_H
+-#define __ARCH_ARM_MACH_MT6575_INCLUDE_MACHINE_MT6575_BT_H
++#ifndef __ARCH_ARM_MACH_MT6577_INCLUDE_MACHINE_MT6577_BT_H
++#define __ARCH_ARM_MACH_MT6577_INCLUDE_MACHINE_MT6577_BT_H
+ 
+ #include <linux/types.h>
+ #include <linux/rfkill.h>
+@@ -36,6 +36,13 @@
+ extern int mt_bt_suspend(pm_message_t state);
+ extern int mt_bt_resume(pm_message_t state);
+ 
++#ifdef BCM_BT_SUPPORT
++extern void brcm_bt_power_on(void);
++extern void brcm_bt_power_off(void);
++extern int brcm_bt_suspend(pm_message_t state);
++extern int brcm_bt_resume(pm_message_t state);
++#endif
++
+ extern void mt_bt_eirq_handler(void* par);
+ extern void mt_bt_pm_init(void* hdev);
+ extern void mt_bt_pm_deinit(void* hdev);

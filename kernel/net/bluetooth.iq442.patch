@@ -1,0 +1,127 @@
+diff -rubN bluetooth.orig/hci_core.c bluetooth.iq442/hci_core.c
+--- bluetooth.orig/hci_core.c	2013-04-08 21:39:50.000000000 +0300
++++ bluetooth.iq442/hci_core.c	2012-11-26 04:14:54.000000000 +0200
+@@ -1647,6 +1647,9 @@
+ }
+ EXPORT_SYMBOL(hci_recv_frame);
+ 
++
++extern void  bluesleep_start_sleep_timer();
++
+ static int hci_reassembly(struct hci_dev *hdev, int type, void *data,
+ 						  int count, __u8 index)
+ {
+@@ -1747,7 +1750,7 @@
+ 
+ 			bt_cb(skb)->pkt_type = type;
+ 			hci_recv_frame(skb);
+-
++                     bluesleep_start_sleep_timer();
+ 			hdev->reassembly[index] = NULL;
+ 			return remain;
+ 		}
+@@ -1903,7 +1906,9 @@
+ 
+ 	/* Get rid of skb owner, prior to sending to the driver. */
+ 	skb_orphan(skb);
+-
++//[wj add ]    
++	hci_notify(hdev, HCI_DEV_WRITE);
++//[wj add end]
+ 	return hdev->send(skb);
+ }
+ 
+diff -rubN bluetooth.orig/hci_event.c bluetooth.iq442/hci_event.c
+--- bluetooth.orig/hci_event.c	2013-04-08 21:39:50.000000000 +0300
++++ bluetooth.iq442/hci_event.c	2012-11-26 04:14:41.000000000 +0200
+@@ -1441,6 +1441,21 @@
+ 			hci_send_cmd(hdev, HCI_OP_CHANGE_CONN_PTYPE,
+ 							sizeof(cp), &cp);
+ 		}
++
++		/* Broadcom begin */
++		if ((conn->type == ACL_LINK)&&(hdev->conn_hash.acl_num > 1)) {
++			struct hci_conn_hash *h = &hdev->conn_hash;
++			struct list_head *p;
++			struct hci_conn  *c;
++
++			list_for_each(p, &h->list) {
++				c = list_entry(p, struct hci_conn, list);
++				if (c->type == ACL_LINK)
++					hci_conn_switch_role(c, 0x00);
++			}
++		}
++		/* Broadcom end */
++
+ 	} else {
+ 		conn->state = BT_CLOSED;
+ 		if (conn->type == ACL_LINK)
+@@ -1747,8 +1762,39 @@
+ 		hci_send_cmd(hdev, HCI_OP_READ_REMOTE_EXT_FEATURES,
+ 							sizeof(cp), &cp);
+ 		goto unlock;
++	} else {
++		/*Broadcom begin*/
++		if (!(conn->features[3] & (0x02|0x04)))
++		{
++			if (!(conn->link_mode) & HCI_LM_MASTER)
++			{
++				// act as slave
++				if (!test_and_set_bit(HCI_CONN_RSWITCH_PEND,
++							&conn->pend))
++				{
++					struct hci_cp_switch_role cp;
++				
++					bacpy(&cp.bdaddr, &conn->dst);
++					cp.role = 0x0;
++					BT_DBG("switch to master");
++					hci_send_cmd(conn->hdev, HCI_OP_SWITCH_ROLE,
++							sizeof(cp), &cp);
+ 	}
++			}else {
++				struct hci_cp_write_link_policy cp;
+ 
++				cp.handle = cpu_to_le16(conn->handle);
++				conn->link_policy |= HCI_LP_SNIFF;
++				conn->link_policy |= HCI_LP_HOLD;
++				conn->link_policy &= ~HCI_LP_RSWITCH;
++				cp.policy = cpu_to_le16(conn->link_policy);
++				BT_DBG("disable role switch.");
++				hci_send_cmd(conn->hdev, HCI_OP_WRITE_LINK_POLICY,
++						sizeof(cp), &cp);
++			}
++		}
++		/*Broadcom end*/
++    }
+ 	if (!ev->status) {
+ 		struct hci_cp_remote_name_req cp;
+ 		memset(&cp, 0, sizeof(cp));
+@@ -2071,7 +2117,28 @@
+ 			if (ev->role)
+ 				conn->link_mode &= ~HCI_LM_MASTER;
+ 			else
++			    /*Broadcom begin*/
++			    {
+ 				conn->link_mode |= HCI_LM_MASTER;
++
++				     if (!(conn->features[3] & (0x02|0x04)))
++				     {
++					     // when not support 2M/3M EDR
++					     // disable role switch after changed to master
++					     struct hci_cp_write_link_policy cp;
++
++					     cp.handle = cpu_to_le16(conn->handle);
++					     conn->link_policy |= HCI_LP_SNIFF;
++					     conn->link_policy |= HCI_LP_HOLD;
++					     conn->link_policy &= ~HCI_LP_RSWITCH;
++					     cp.policy = cpu_to_le16(conn->link_policy);
++					     BT_DBG("disable role switch.");
++					     hci_send_cmd(conn->hdev, HCI_OP_WRITE_LINK_POLICY,
++								sizeof(cp), &cp);
++				    }
++
++
++			    }
+ 		}
+ 
+ 		clear_bit(HCI_CONN_RSWITCH_PEND, &conn->pend);

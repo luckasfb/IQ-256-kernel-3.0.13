@@ -1,0 +1,363 @@
+diff -rubN src/kd_sensorlist.c src.iq255/kd_sensorlist.c
+--- src/kd_sensorlist.c	2012-08-04 12:21:59.000000000 +0300
++++ src.iq255/kd_sensorlist.c	2012-05-02 21:05:52.000000000 +0300
+@@ -53,7 +53,6 @@
+ #include "kd_sensorlist.h"
+ 
+ #define USE_NEW_IOCTL
+-static struct timeval tWorkQueue; 
+ 
+ /*******************************************************************************
+ * general camera image sensor kernel driver
+@@ -142,7 +141,6 @@
+ static struct class *sensor_class = NULL;
+ //static atomic_t g_CAMERA_HWatomic;
+ static atomic_t g_CamHWOpend; 
+-static atomic_t g_CamHWOpening;
+ static atomic_t g_CamDrvOpenCnt; 
+ 
+ static DEFINE_MUTEX(kdCam_Mutex); 
+@@ -160,9 +158,9 @@
+ * migrate new style i2c driver interfaces required by Kirby 20100827
+ ********************************************************************************/
+ static const struct i2c_device_id CAMERA_HW_i2c_id[] = {{CAMERA_HW_DRVNAME,0},{}};   
+-//static unsigned short force[] = {IMG_SENSOR_I2C_GROUP_ID, CAMERA_HW_WRITE_ID, I2C_CLIENT_END, I2C_CLIENT_END};   
+-//static const unsigned short * const forces[] = { force, NULL };              
+-//static struct i2c_client_address_data addr_data = { .forces = forces,}; 
++static unsigned short force[] = {1, CAMERA_HW_WRITE_ID, I2C_CLIENT_END, I2C_CLIENT_END};   
++static const unsigned short * const forces[] = { force, NULL };              
++static struct i2c_client_address_data addr_data = { .forces = forces,}; 
+ /*******************************************************************************
+ *
+ ********************************************************************************/
+@@ -174,7 +172,7 @@
+     int  i4RetValue = 0;
+     char puReadCmd[2] = {(char)(a_u2Addr >> 8) , (char)(a_u2Addr & 0xFF)};
+ 
+-    g_pstI2Cclient->addr = (i2cId >> 1);
++    g_pstI2Cclient->addr = i2cId;
+ 
+     //
+     i4RetValue = i2c_master_send(g_pstI2Cclient, puReadCmd, 2);
+@@ -199,7 +197,7 @@
+ {
+     int  i4RetValue = 0;
+ 
+-    g_pstI2Cclient->addr = (i2cId >> 1);
++    g_pstI2Cclient->addr = i2cId;
+     //
+     i4RetValue = i2c_master_send(g_pstI2Cclient, a_pSendData, a_sizeSendData);
+     if (i4RetValue != a_sizeSendData) {
+@@ -232,7 +230,7 @@
+ //    PK_DBG("Addr : 0x%x,Val : 0x%x \n",a_u2Addr,a_u4Data);
+ 
+     //KD_IMGSENSOR_PROFILE_INIT(); 
+-    g_pstI2Cclient->addr = (i2cId >> 1);
++    g_pstI2Cclient->addr = i2cId;
+ 
+     if(a_u4Bytes > 2)
+     {
+@@ -295,7 +293,7 @@
+     //PK_DBG("[iBurstWriteReg] bytes = %d, phy addr = 0x%x \n", bytes, phyAddr ); 
+     
+     old_addr = g_pstI2Cclient->addr; 
+-    g_pstI2Cclient->addr = ( ((g_pstI2Cclient->addr >> 1) &  I2C_MASK_FLAG) | I2C_DMA_FLAG ); 
++    g_pstI2Cclient->addr = ( (g_pstI2Cclient->addr &  I2C_MASK_FLAG) | I2C_DMA_FLAG ); 
+ 
+     ret = 0; 
+ #if 0
+@@ -368,7 +366,7 @@
+ 	}
+ 	memcpy(buf, pData, bytes);
+ 	old_addr = g_pstI2Cclient->addr;
+-	g_pstI2Cclient->addr = (((g_pstI2Cclient->addr >> 1) & I2C_MASK_FLAG) | I2C_DMA_FLAG);
++	g_pstI2Cclient->addr = ((g_pstI2Cclient->addr & I2C_MASK_FLAG) | I2C_DMA_FLAG);
+ 	
+ 	ret = i2c_master_send(g_pstI2Cclient, (u8*)dma_addr, lens);
+ 	if(ret != lens) {
+@@ -397,7 +395,7 @@
+ //    PK_DBG("Addr : 0x%x,Val : 0x%x \n",a_u2Addr,a_u4Data);
+ 
+     //KD_IMGSENSOR_PROFILE_INIT(); 
+-    g_pstI2Cclient->addr = (i2cId >> 1);
++    g_pstI2Cclient->addr = i2cId;
+     //
+     do {
+         i4RetValue = i2c_master_send(g_pstI2Cclient, a_pSendData, a_sizeSendData);
+@@ -483,24 +481,11 @@
+ }
+ 
+ /*******************************************************************************
+-* kdCheckSensorPowerOn
+-********************************************************************************/
+-int kdCheckSensorPowerOn(void)
+-{
+-    if (atomic_read(&g_CamHWOpening)==0){//sensor power off
+-        return 0;
+-    }
+-    else {//sensor power on
+-        return 1;
+-    }
+-}
+-
+-/*******************************************************************************
+ * kdSensorSyncFunctionPtr
+ ********************************************************************************/
+ //static u16 g_SensorAFPos = 0; 
+ //static atomic_t g_SetSensorAF; 
+-int kdSensorSyncFunctionPtr(void)
++int kdSensorSyncFunctionPtr()
+ {
+     unsigned int FeatureParaLen = 0;
+     //PK_DBG("[Sensor] kdSensorSyncFunctionPtr1:%d %d %d\n", g_NewSensorExpGain.uSensorExpDelayFrame, g_NewSensorExpGain.uSensorGainDelayFrame, g_NewSensorExpGain.uISPGainDelayFrame);    
+@@ -535,8 +520,6 @@
+     if((g_NewSensorExpGain.uISPGainDelayFrame != 0xFF) && (g_NewSensorExpGain.uISPGainDelayFrame != 0)){
+         g_NewSensorExpGain.uISPGainDelayFrame --;  
+     }	
+-    
+-    do_gettimeofday(&tWorkQueue);   // keep the time for last sensor setting
+     mutex_unlock(&kdCam_Mutex);           
+     return 0;
+ }
+@@ -581,7 +564,6 @@
+         //power on sensor
+     if (atomic_read(&g_CamHWOpend) == 0) {
+         // turn on power 
+-        atomic_set(&g_CamHWOpening, 1);
+         kdModulePowerOn((CAMERA_DUAL_CAMERA_SENSOR_ENUM) g_currDualSensorIdx, g_currSensorName,true, CAMERA_HW_DRVNAME);
+         //wait for power stable 
+         mDELAY(10); 
+@@ -773,8 +755,6 @@
+     ACDK_SENSOR_FEATURECONTROL_STRUCT *pFeatureCtrl = (ACDK_SENSOR_FEATURECONTROL_STRUCT*)pBuf;
+     unsigned int FeatureParaLen = 0;
+     void *pFeaturePara = NULL;
+-    unsigned long TimeSyncUS;    
+-    struct timeval tSent2Kernel; 
+     
+     ACDK_SENSOR_GROUP_INFO_STRUCT *pSensorGroupInfo = NULL;
+     ACDK_KD_SENSOR_SYNC_STRUCT *pSensorSyncInfo = NULL;
+@@ -835,7 +815,6 @@
+         case SENSOR_FEATURE_SET_AUTO_FLICKER_MODE:
+         case SENSOR_FEATURE_GET_EV_AWB_REF:    
+         case SENSOR_FEATURE_GET_SHUTTER_GAIN_AWB_GAIN:
+-        case SENSOR_FEATURE_SET_AE_WINDOW:
+         case SENSOR_FEATURE_GET_EXIF_INFO:
+             //
+             if(copy_from_user((void*)pFeaturePara , (void *) pFeatureCtrl->pFeaturePara, FeatureParaLen)) {
+@@ -861,35 +840,6 @@
+ 	    g_NewSensorExpGain.uSensorGainDelayFrame = pSensorSyncInfo->uSensorGainDelayFrame;
+ 	    g_NewSensorExpGain.uISPGainDelayFrame = pSensorSyncInfo->uISPGainDelayFrame;
+ 
+-           // if the work queue end in the 5ms, send to sensor for 1st frame
+-	    do_gettimeofday(&tSent2Kernel);
+-           TimeSyncUS = (tSent2Kernel.tv_sec - tWorkQueue.tv_sec) * 1000000 + (tSent2Kernel.tv_usec - tWorkQueue.tv_usec); 
+-           if(TimeSyncUS < 10000) {   // 10 ms
+-               PK_DBG("Send to sensor for 1st frame:%d\n", TimeSyncUS);      
+-//              kdSensorSyncFunctionPtr();
+-               if (g_NewSensorExpGain.uSensorExpDelayFrame == 0) {
+-                   FeatureParaLen = 2;
+-                   g_pSensorFunc->SensorFeatureControl(SENSOR_FEATURE_SET_ESHUTTER, (unsigned char*)&g_NewSensorExpGain.u2SensorNewExpTime, (unsigned int*) &FeatureParaLen);        
+-                   g_NewSensorExpGain.uSensorExpDelayFrame = 0xFF; // disable                         
+-               } else if(g_NewSensorExpGain.uSensorExpDelayFrame != 0xFF) {
+-                   g_NewSensorExpGain.uSensorExpDelayFrame --;  
+-               }
+-   
+-               // exposure gain 
+-               if (g_NewSensorExpGain.uSensorGainDelayFrame == 0) {
+-                   FeatureParaLen = 2;
+-                   g_pSensorFunc->SensorFeatureControl(SENSOR_FEATURE_SET_GAIN, (unsigned char*)&g_NewSensorExpGain.u2SensorNewGain, (unsigned int*) &FeatureParaLen);
+-                   g_NewSensorExpGain.uSensorGainDelayFrame = 0xFF; // disable 
+-               } else if(g_NewSensorExpGain.uSensorGainDelayFrame != 0xFF) {
+-                   g_NewSensorExpGain.uSensorGainDelayFrame --;  
+-               } 
+-    
+-               // if the delay frame is 0 or 0xFF, stop to count
+-               if((g_NewSensorExpGain.uISPGainDelayFrame != 0xFF) && (g_NewSensorExpGain.uISPGainDelayFrame != 0)){
+-                   g_NewSensorExpGain.uISPGainDelayFrame --;  
+-               }	
+-           }
+-	     
+ //          PK_DBG("[pFeaturePara] NewExp:%d NewSensorGain:%d NewISPGain:%d %d %d %d ExpDelay:%d SensorGainDelay:%d ISPGainDelay:%d\n", 
+ //	    	g_NewSensorExpGain.u2SensorNewExpTime,	g_NewSensorExpGain.u2SensorNewGain, g_NewSensorExpGain.u2ISPNewRGain, 
+ //				g_NewSensorExpGain.u2ISPNewGrGain, g_NewSensorExpGain.u2ISPNewGbGain, g_NewSensorExpGain.u2ISPNewBGain, 
+@@ -981,8 +931,6 @@
+         case SENSOR_FEATURE_GET_AF_STATUS:            
+         case SENSOR_FEATURE_GET_AF_INF:            
+         case SENSOR_FEATURE_GET_AF_MACRO:       
+-        case SENSOR_FEATURE_GET_AF_MAX_NUM_FOCUS_AREAS:    
+-        case SENSOR_FEATURE_GET_AE_MAX_NUM_METERING_AREAS:
+         case SENSOR_FEATURE_CHECK_SENSOR_ID:
+             //
+             if(copy_to_user((void __user *) pFeatureCtrl->pFeaturePara, (void*)pFeaturePara , FeatureParaLen))
+@@ -1041,7 +989,6 @@
+         kdModulePowerOn((CAMERA_DUAL_CAMERA_SENSOR_ENUM) g_currDualSensorIdx, NULL, false, CAMERA_HW_DRVNAME);
+     }
+    atomic_set(&g_CamHWOpend, 0); 
+-   atomic_set(&g_CamHWOpening, 0);
+     
+     // reset the delay frame flag	
+     g_NewSensorExpGain.uSensorExpDelayFrame = 0xFF;
+@@ -1294,13 +1241,12 @@
+  * CAMERA_HW_i2c_detect
+  * migrate new style i2c driver interfaces required by Kirby 20100827
+ ********************************************************************************/
+-#if 0
+ static int CAMERA_HW_i2c_detect(struct i2c_client *client, int kind, struct i2c_board_info *info) 
+ {         
+     strcpy(info->type, CAMERA_HW_DRVNAME);
+     return 0;
+ }
+-#endif
++
+ /*******************************************************************************
+ * CAMERA_HW_i2c_probe
+ ********************************************************************************/
+@@ -1343,8 +1289,10 @@
+ struct i2c_driver CAMERA_HW_i2c_driver = {                       
+     .probe = CAMERA_HW_i2c_probe,                                   
+     .remove = CAMERA_HW_i2c_remove,                           
++    .detect = CAMERA_HW_i2c_detect,                           
+     .driver.name = CAMERA_HW_DRVNAME,
+     .id_table = CAMERA_HW_i2c_id,                             
++    .address_data = &addr_data,                        
+ };
+ /*******************************************************************************
+ * i2c relative end
+@@ -1413,21 +1361,7 @@
+ static int  CAMERA_HW_DumpReg_To_Proc(char *page, char **start, off_t off,
+                                                                                        int count, int *eof, void *data)
+ {
+-#if 0
+     return count;
+-#else
+-	/*punk temperaly*/
+-    char *ptr = page;
+-	char *name;
+-
+-	PK_DBG("%s ,cam name=%s\n", __func__,g_currSensorName);
+-	printk("%s ,cam name=%s\n", __func__,g_currSensorName);
+-	ptr += sprintf( ptr, "Camera sensor name : %s\n",g_currSensorName);
+-
+-
+-	*eof = 1;
+-	return ( ptr - page );
+-#endif
+ }
+ 
+ /*******************************************************************************
+@@ -1502,7 +1436,6 @@
+     }
+     atomic_set(&g_CamHWOpend, 0); 
+     atomic_set(&g_CamDrvOpenCnt, 0);
+-    atomic_set(&g_CamHWOpening, 0);
+     return 0;
+ }
+ 
+diff -rubN src/kd_sensorlist.h src.iq255/kd_sensorlist.h
+--- src/kd_sensorlist.h	2013-10-11 14:46:52.067015399 +0300
++++ src.iq255/kd_sensorlist.h	2012-05-02 21:05:52.000000000 +0300
+@@ -9,8 +9,9 @@
+ UINT32 OV2655_YUV_SensorInit(PSENSOR_FUNCTION_STRUCT *pfFunc);
+ UINT32 OV2659_YUV_SensorInit(PSENSOR_FUNCTION_STRUCT *pfFunc);
+ UINT32 OV3640SensorInit(PSENSOR_FUNCTION_STRUCT *pfFunc);
++UINT32 OV3660_YUV_SensorInit(PSENSOR_FUNCTION_STRUCT *pfFunc);
+ UINT32 OV3640_YUV_SensorInit(PSENSOR_FUNCTION_STRUCT *pfFunc);
+-UINT32 OV3660_YUV_SensorInit(PSENSOR_FUNCTION_STRUCT *pfFunc);//chenhaojun
++UINT32 OV5650SensorInit(PSENSOR_FUNCTION_STRUCT *pfFunc);
+ UINT32 OV5642_RAW_SensorInit(PSENSOR_FUNCTION_STRUCT *pfFunc); 
+ UINT32 OV5642_MIPI_YUV_SensorInit(PSENSOR_FUNCTION_STRUCT *pfFunc);
+ UINT32 OV5642_MIPI_RGB_SensorInit(PSENSOR_FUNCTION_STRUCT *pfFunc);
+@@ -23,19 +24,14 @@
+ UINT32 MT9V114_YUV_SensorInit(PSENSOR_FUNCTION_STRUCT *pfFunc);
+ UINT32 MT9T113_YUV_SensorInit(PSENSOR_FUNCTION_STRUCT *pfFunc);
+ UINT32 MT9T113MIPI_YUV_SensorInit(PSENSOR_FUNCTION_STRUCT *pfFunc);
++UINT32 HI253_YUV_SensorInit(PSENSOR_FUNCTION_STRUCT *pfFunc);
+ UINT32 SIV120B_YUV_SensorInit(PSENSOR_FUNCTION_STRUCT *pfFunc);
+ UINT32 PAS6180_SERIAL_YUV_SensorInit(PSENSOR_FUNCTION_STRUCT *pfFunc);
+ UINT32 SHARP3D_MIPI_YUV_SensorInit(PSENSOR_FUNCTION_STRUCT *pfFunc);
+-// LuckAs add
+-UINT32 HI253_YUV_SensorInit(PSENSOR_FUNCTION_STRUCT *pfFunc);
+-UINT32 SP0A19_YUV_SensorInit(PSENSOR_FUNCTION_STRUCT *pfFunc);
+-// LuckAs end
+ UINT32 HI704_YUV_SensorInit(PSENSOR_FUNCTION_STRUCT *pfFunc);
+-UINT32 GC0329_YUV_SensorInit(PSENSOR_FUNCTION_STRUCT *pfFunc);  //amy0309
+-UINT32 GC0309_YUV_SensorInit(PSENSOR_FUNCTION_STRUCT *pfFunc);//amy0309
++
+ 
+ UINT32 S5K5CAGX_YUV_SensorInit(PSENSOR_FUNCTION_STRUCT *pfFunc);
+-UINT32 OV7690_YUV_SensorInit(PSENSOR_FUNCTION_STRUCT *pfFunc);//LK@I3000
+ //! Add Sensor Init function here
+ //! Note:
+ //! 1. Add by the resolution from ""large to small"", due to large sensor 
+@@ -68,12 +64,18 @@
+ #if defined(OV5647_RAW)
+     {OV5647_SENSOR_ID, SENSOR_DRVNAME_OV5647_RAW, OV5647SensorInit}, 
+ #endif
++#if defined(OV5650_RAW)
++	{OV5650_SENSOR_ID, SENSOR_DRVNAME_OV5650_RAW,OV5650SensorInit},
++#endif
+ #if defined(MT9P012_RAW)
+ 	{MT9P012_SENSOR_ID, SENSOR_DRVNAME_MT9P012_RAW,MT9P012SensorInit},
+ #endif
+ #if defined(MT9P015_RAW)
+   {MT9P015_SENSOR_ID, SENSOR_DRVNAME_MT9P015_RAW,MT9P015SensorInit},
+ #endif
++#if defined(OV3660_YUV)
++	{OV3660_SENSOR_ID, SENSOR_DRVNAME_OV3660_YUV,OV3660_YUV_SensorInit},
++#endif
+ #if defined(MT9P017_RAW)
+   {MT9P017_SENSOR_ID, SENSOR_DRVNAME_MT9P017_RAW,MT9P017SensorInit},
+ #endif
+@@ -89,9 +91,6 @@
+ #if defined(OV3640_YUV_AF)
+     {OV3640_SENSOR_ID, SENSOR_DRVNAME_OV3640_YUV, OV3640_YUV_SensorInit}, 
+ #endif
+-#if defined(OV3660_YUV)//chenhaojun
+-    {OV3660_SENSOR_ID, SENSOR_DRVNAME_OV3660_YUV, OV3660_YUV_SensorInit}, 
+-#endif
+ #if defined(MT9T113_YUV)
+     {MT9T113_SENSOR_ID, SENSOR_DRVNAME_MT9T113_YUV, MT9T113_YUV_SensorInit}, 
+ #endif
+@@ -107,18 +106,15 @@
+ #if defined(OV2655_YUV)
+ 	{OV2650_SENSOR_ID, SENSOR_DRVNAME_OV2655_YUV,OV2655_YUV_SensorInit},
+ #endif
++#if defined(HI253_YUV)
++    {HI253_SENSOR_ID, SENSOR_DRVNAME_HI253_YUV, HI253_YUV_SensorInit}, 
++#endif
+ #if defined(OV2659_YUV)
+ 	{OV2659_SENSOR_ID, SENSOR_DRVNAME_OV2659_YUV,OV2659_YUV_SensorInit},
+ #endif
+ #if defined(OV7675_YUV)
+     {OV7675_SENSOR_ID, SENSOR_DRVNAME_OV7675_YUV, OV7675_YUV_SensorInit}, 
+ #endif
+-#if defined(OV7690_YUV)//LK@I3000
+-    {OV7690_SENSOR_ID, SENSOR_DRVNAME_OV7690_YUV, OV7690_YUV_SensorInit}, 
+-#endif
+-#if defined(GC0309_YUV)//amy0309
+-    {GC0309_SENSOR_ID, SENSOR_DRVNAME_GC0309_YUV, GC0309_YUV_SensorInit}, 
+-#endif
+ #if defined(MT9V113_YUV)
+     {MT9V113_SENSOR_ID, SENSOR_DRVNAME_MT9V113_YUV, MT9V113_YUV_SensorInit}, 
+ #endif
+@@ -134,20 +130,9 @@
+ #if defined(SHARP3D_MIPI_YUV)
+     {SHARP3D_SENSOR_ID, SENSOR_DRVNAME_SHARP3D_MIPI_YUV, SHARP3D_MIPI_YUV_SensorInit}, 
+ #endif
+-// LuckAs add
+-#if defined(HI253_YUV)
+-    {HI253_SENSOR_ID, SENSOR_DRVNAME_HI253_YUV, HI253_YUV_SensorInit}, 
+-#endif
+-#if defined(SP0A19_YUV)
+-    {SP0A19_SENSOR_ID, SENSOR_DRVNAME_SP0A19_YUV, SP0A19_YUV_SensorInit}, 
+-#endif
+-// LuckAs end
+ #if defined(HI704_YUV)
+     {HI704_SENSOR_ID, SENSOR_DRVNAME_HI704_YUV, HI704_YUV_SensorInit}, 
+ #endif
+-#if defined(GC0329_YUV)  //amy0309 
+-    {GC0329_SENSOR_ID, SENSOR_DRVNAME_GC0329_YUV, GC0329_YUV_SensorInit}, 
+-#endif
+ 
+ /*  ADD sensor driver before this line */
+     {0,{0},NULL}, //end of list

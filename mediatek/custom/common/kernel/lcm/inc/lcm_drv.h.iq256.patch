@@ -1,0 +1,105 @@
+--- lcm_drv.h.orig	2013-02-27 11:02:38.000000000 +0200
++++ lcm_drv.h.iq256	2013-10-03 12:47:07.000000000 +0300
+@@ -1,38 +1,3 @@
+-/*****************************************************************************
+-*  Copyright Statement:
+-*  --------------------
+-*  This software is protected by Copyright and the information contained
+-*  herein is confidential. The software may not be copied and the information
+-*  contained herein may not be used or disclosed except with the written
+-*  permission of MediaTek Inc. (C) 2008
+-*
+-*  BY OPENING THIS FILE, BUYER HEREBY UNEQUIVOCALLY ACKNOWLEDGES AND AGREES
+-*  THAT THE SOFTWARE/FIRMWARE AND ITS DOCUMENTATIONS ("MEDIATEK SOFTWARE")
+-*  RECEIVED FROM MEDIATEK AND/OR ITS REPRESENTATIVES ARE PROVIDED TO BUYER ON
+-*  AN "AS-IS" BASIS ONLY. MEDIATEK EXPRESSLY DISCLAIMS ANY AND ALL WARRANTIES,
+-*  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED WARRANTIES OF
+-*  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE OR NONINFRINGEMENT.
+-*  NEITHER DOES MEDIATEK PROVIDE ANY WARRANTY WHATSOEVER WITH RESPECT TO THE
+-*  SOFTWARE OF ANY THIRD PARTY WHICH MAY BE USED BY, INCORPORATED IN, OR
+-*  SUPPLIED WITH THE MEDIATEK SOFTWARE, AND BUYER AGREES TO LOOK ONLY TO SUCH
+-*  THIRD PARTY FOR ANY WARRANTY CLAIM RELATING THERETO. MEDIATEK SHALL ALSO
+-*  NOT BE RESPONSIBLE FOR ANY MEDIATEK SOFTWARE RELEASES MADE TO BUYER'S
+-*  SPECIFICATION OR TO CONFORM TO A PARTICULAR STANDARD OR OPEN FORUM.
+-*
+-*  BUYER'S SOLE AND EXCLUSIVE REMEDY AND MEDIATEK'S ENTIRE AND CUMULATIVE
+-*  LIABILITY WITH RESPECT TO THE MEDIATEK SOFTWARE RELEASED HEREUNDER WILL BE,
+-*  AT MEDIATEK'S OPTION, TO REVISE OR REPLACE THE MEDIATEK SOFTWARE AT ISSUE,
+-*  OR REFUND ANY SOFTWARE LICENSE FEES OR SERVICE CHARGE PAID BY BUYER TO
+-*  MEDIATEK FOR SUCH MEDIATEK SOFTWARE AT ISSUE.
+-*
+-*  THE TRANSACTION CONTEMPLATED HEREUNDER SHALL BE CONSTRUED IN ACCORDANCE
+-*  WITH THE LAWS OF THE STATE OF CALIFORNIA, USA, EXCLUDING ITS CONFLICT OF
+-*  LAWS PRINCIPLES.  ANY DISPUTES, CONTROVERSIES OR CLAIMS ARISING THEREOF AND
+-*  RELATED THERETO SHALL BE SETTLED BY ARBITRATION IN SAN FRANCISCO, CA, UNDER
+-*  THE RULES OF THE INTERNATIONAL CHAMBER OF COMMERCE (ICC).
+-*
+-*****************************************************************************/
+-
+ #ifndef __LCM_DRV_H__
+ #define __LCM_DRV_H__
+ 
+@@ -446,6 +411,7 @@
+ 	unsigned int		noncont_clock;
+ 	unsigned int		noncont_clock_period;
+ 	
++	unsigned int		force_dcs_packet;
+ } LCM_DSI_PARAMS;
+ 
+ // ---------------------------------------------------------------------------
+@@ -468,6 +434,16 @@
+ 
+ // ---------------------------------------------------------------------------
+ 
++#define REGFLAG_ESCAPE_ID		(0x00)
++#define REGFLAG_DELAY_MS_V3		(0xFF)
++
++typedef struct {
++    unsigned char id;    
++    unsigned char cmd;
++    unsigned char count;
++    unsigned char para_list[128];
++} LCM_setting_table_V3;
++
+ typedef struct
+ {
+     void (*set_reset_pin)(unsigned int value);
+@@ -480,6 +456,7 @@
+     void (*send_data)(unsigned int data);
+     unsigned int (*read_data)(void);
+ 
++	void (*dsi_set_cmdq_V3)(LCM_setting_table_V3 *para_list, unsigned int size, unsigned char force_update);
+ 	void (*dsi_set_cmdq_V2)(unsigned cmd, unsigned char count, unsigned char *para_list, unsigned char force_update);
+ 	void (*dsi_set_cmdq)(unsigned int *pdata, unsigned int queue_size, unsigned char force_update);
+ 	void (*dsi_write_cmd)(unsigned int cmd);
+@@ -524,9 +501,30 @@
+     unsigned int  (*esd_recover)(void);
+ 
+ /////////////////////////////////////////////////
++//Append by Jieve Liu
++//Begin{
++    int (*get_initialization_settings)(unsigned char table[]);
++    int (*set_initialization_settings)(const unsigned char table[], const int count);
++//}Append by Jieve Liu
++//End
+ 
+ } LCM_DRIVER;
+ 
++//Append by Jieve Liu
++//Begin{
++#define LCM_INIT_TABLE_SIZE_MAX     2048
++#define REGFLAG_DELAY             		0XFE
++#define REGFLAG_END_OF_TABLE      	0xFD   // END OF REGISTERS MARKER
++
++typedef struct _LCM_SETTING_ITEM {
++	unsigned char cmd;
++	unsigned char count;
++	unsigned char params[0];
++}LCM_SETTING_ITEM;
++
++//}Append by Jieve Liu
++//End
++
+ 
+ // ---------------------------------------------------------------------------
+ //  LCM Driver Functions

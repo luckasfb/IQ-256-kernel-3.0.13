@@ -1,0 +1,193 @@
+diff -ruN src.orig/mtk_tpd.c src.iq256/mtk_tpd.c
+--- src.orig/mtk_tpd.c	2013-08-02 22:35:30.000000000 +0300
++++ src.iq256/mtk_tpd.c	2013-03-06 11:09:27.000000000 +0200
+@@ -1,4 +1,22 @@
+-
++/******************************************************************************
++ * mtk_tpd.c - MTK Android Linux Touch Panel Device Driver               *
++ *                                                                            *
++ * Copyright 2008-2009 MediaTek Co.,Ltd.                                      *
++ *                                                                            *
++ * DESCRIPTION:                                                               *
++ *     this file provide basic touch panel event to input sub system          *
++ *                                                                            *
++ * AUTHOR:                                                                    *
++ *     Kirby.Wu (mtk02247)                                                    *
++ *                                                                            *
++ * NOTE:                                                                      *
++ * 1. Sensitivity for touch screen should be set to edge-sensitive.           *
++ *    But in this driver it is assumed to be done by interrupt core,          *
++ *    though not done yet. Interrupt core may provide interface to            *
++ *    let drivers set the sensitivity in the future. In this case,            *
++ *    this driver should set the sensitivity of the corresponding IRQ         *
++ *    line itself.                                                            *
++ ******************************************************************************/
+ 
+ #include "tpd.h"
+ 
+diff -ruN src.orig/tpd_button.c src.iq256/tpd_button.c
+--- src.orig/tpd_button.c	2012-11-13 05:56:23.000000000 +0200
++++ src.iq256/tpd_button.c	2013-03-06 11:09:27.000000000 +0200
+@@ -1,4 +1,3 @@
+-
+ #include "tpd.h"
+ 
+ extern struct tpd_device *tpd;
+diff -ruN src.orig/tpd_calibrate.c src.iq256/tpd_calibrate.c
+--- src.orig/tpd_calibrate.c	2012-11-13 05:55:46.000000000 +0200
++++ src.iq256/tpd_calibrate.c	2013-03-06 11:09:27.000000000 +0200
+@@ -1,4 +1,3 @@
+-
+ #include "tpd.h"
+ //#ifdef TPD_HAVE_CALIBRATION
+ 
+diff -ruN src.orig/tpd_calibrate.h src.iq256/tpd_calibrate.h
+--- src.orig/tpd_calibrate.h	2012-11-13 05:55:46.000000000 +0200
++++ src.iq256/tpd_calibrate.h	2013-03-06 11:09:27.000000000 +0200
+@@ -1,4 +1,3 @@
+-
+ #ifndef TPD_CALIBRATE_H
+ #define TPD_CALIBRATE_H
+ #ifdef TPD_HAVE_CALIBRATION
+diff -ruN src.orig/tpd_debug.c src.iq256/tpd_debug.c
+--- src.orig/tpd_debug.c	2012-11-13 05:54:58.000000000 +0200
++++ src.iq256/tpd_debug.c	2013-03-06 11:09:27.000000000 +0200
+@@ -1,4 +1,3 @@
+-  
+ #include <linux/vmalloc.h>  
+ #include <asm/uaccess.h>
+ #include <linux/major.h>
+diff -ruN src.orig/tpd_debug.h src.iq256/tpd_debug.h
+--- src.orig/tpd_debug.h	2012-11-13 05:56:11.000000000 +0200
++++ src.iq256/tpd_debug.h	2013-03-06 11:09:27.000000000 +0200
+@@ -1,4 +1,3 @@
+-
+ #ifndef TPD_DEBUG_H
+ #define TPD_DEBUG_H
+ #ifdef TPD_DEBUG_CODE
+diff -ruN src.orig/tpd_default.c src.iq256/tpd_default.c
+--- src.orig/tpd_default.c	2012-11-13 05:55:41.000000000 +0200
++++ src.iq256/tpd_default.c	2013-03-06 11:09:27.000000000 +0200
+@@ -1,4 +1,3 @@
+-
+ #include "tpd.h"
+ 
+ //#ifndef TPD_CUSTOM_TREMBLE_TOLERANCE
+diff -ruN src.orig/tpd_default.h src.iq256/tpd_default.h
+--- src.orig/tpd_default.h	2012-11-13 05:55:41.000000000 +0200
++++ src.iq256/tpd_default.h	2013-03-06 11:09:27.000000000 +0200
+@@ -1,4 +1,3 @@
+-
+ #ifndef TPD_FAT_TOUCH
+ #define TPD_FAT_TOUCH 120
+ #endif
+diff -ruN src.orig/tpd.h src.iq256/tpd.h
+--- src.orig/tpd.h	2012-11-13 05:55:06.000000000 +0200
++++ src.iq256/tpd.h	2013-03-06 11:09:27.000000000 +0200
+@@ -1,4 +1,3 @@
+-
+ #include <linux/init.h>
+ #include <linux/module.h>
+ #include <linux/kernel.h>
+diff -ruN src.orig/tpd_init.c src.iq256/tpd_init.c
+--- src.orig/tpd_init.c	2012-11-13 05:56:16.000000000 +0200
++++ src.iq256/tpd_init.c	2013-03-06 11:09:27.000000000 +0200
+@@ -1,2 +1 @@
+-
+ // dummy file, temporarily for remake
+diff -ruN src.orig/tpd_misc.c src.iq256/tpd_misc.c
+--- src.orig/tpd_misc.c	2012-11-13 05:56:19.000000000 +0200
++++ src.iq256/tpd_misc.c	2013-03-06 11:09:27.000000000 +0200
+@@ -1,4 +1,3 @@
+-
+ #include "tpd.h"
+ 
+ int tpd_calibrate_en = 0;
+diff -ruN src.orig/tpd_setting.c src.iq256/tpd_setting.c
+--- src.orig/tpd_setting.c	2012-11-13 05:55:16.000000000 +0200
++++ src.iq256/tpd_setting.c	2013-10-02 18:53:32.000000000 +0300
+@@ -1,8 +1,7 @@
+-
+ #include "tpd.h"
+ 
+-int TPD_RES_X = 480;
+-int TPD_RES_Y = 800;
++int TPD_RES_X = 320;
++int TPD_RES_Y = 480;
+ 
+ //#if (defined(TPD_HAVE_CALIBRATION) && !defined(TPD_CUSTOM_CALIBRATION))
+ int tpd_calmat[8]     = {0};
+@@ -22,9 +21,9 @@
+ 
+ int tpd_mode = TPD_MODE_NORMAL;
+ int tpd_mode_axis = 0;
+-int tpd_mode_min = 400; //TPD_RES_Y/2;
+-int tpd_mode_max = 800; //TPD_RES_Y;
+-int tpd_mode_keypad_tolerance = 480*480/1600; //TPD_RES_X*TPD_RES_X/1600;
++int tpd_mode_min = 240; //TPD_RES_Y/2;
++int tpd_mode_max = 480; //TPD_RES_Y;
++int tpd_mode_keypad_tolerance = 320*320/800; //TPD_RES_X*TPD_RES_X/1600;
+ module_param(tpd_mode, int, 00664);
+ module_param(tpd_mode_axis, int, 00664);
+ module_param(tpd_mode_min, int, 00664);
+diff -ruN src.orig/tpd_setting.c.orig src.iq256/tpd_setting.c.orig
+--- src.orig/tpd_setting.c.orig	1970-01-01 03:00:00.000000000 +0300
++++ src.iq256/tpd_setting.c.orig	2013-03-06 11:09:27.000000000 +0200
+@@ -0,0 +1,57 @@
++#include "tpd.h"
++
++int TPD_RES_X = 480;
++int TPD_RES_Y = 800;
++
++//#if (defined(TPD_HAVE_CALIBRATION) && !defined(TPD_CUSTOM_CALIBRATION))
++int tpd_calmat[8]     = {0};
++int tpd_def_calmat[8] = {0};
++int tpd_calmat_size   = 8;
++int tpd_def_calmat_size   = 8;
++module_param_array(tpd_calmat, int, &tpd_calmat_size, 00664);
++module_param_array(tpd_def_calmat, int, &tpd_def_calmat_size, 00444);
++//#endif
++//#ifdef TPD_TYPE_CAPACITIVE
++int tpd_type_cap = 0;
++
++module_param(tpd_type_cap, int, 00444);
++int tpd_firmware_version[2] = {0,0};
++int tpd_firmware_version_size = 2;
++module_param_array(tpd_firmware_version, int, &tpd_firmware_version_size, 00444);
++
++int tpd_mode = TPD_MODE_NORMAL;
++int tpd_mode_axis = 0;
++int tpd_mode_min = 400; //TPD_RES_Y/2;
++int tpd_mode_max = 800; //TPD_RES_Y;
++int tpd_mode_keypad_tolerance = 480*480/1600; //TPD_RES_X*TPD_RES_X/1600;
++module_param(tpd_mode, int, 00664);
++module_param(tpd_mode_axis, int, 00664);
++module_param(tpd_mode_min, int, 00664);
++module_param(tpd_mode_max, int, 00664);
++module_param(tpd_mode_keypad_tolerance, int, 00664);
++
++/* ATTENTION! all the default values should sync with tpd_adc_init()@tpd_adc.c */
++int tpd_em_debounce_time0 = 1;
++int tpd_em_debounce_time = 0;
++int tpd_em_debounce_time1 = 4;
++module_param(tpd_em_debounce_time0, int, 00664);
++module_param(tpd_em_debounce_time1, int, 00664);
++module_param(tpd_em_debounce_time, int, 00664);
++
++int tpd_em_spl_num = 1;
++module_param(tpd_em_spl_num, int, 00664);
++
++int tpd_em_pressure_threshold = 0;
++module_param(tpd_em_pressure_threshold, int, 00664);
++
++int tpd_em_auto_time_interval = 10;
++module_param(tpd_em_auto_time_interval, int, 00664);
++
++int tpd_em_sample_cnt = 16;
++module_param(tpd_em_sample_cnt, int, 00664);
++
++int tpd_load_status = 0;
++module_param(tpd_load_status, int, 00664);
++
++int tpd_em_asamp = 1;
++module_param(tpd_em_asamp, int, 00664);

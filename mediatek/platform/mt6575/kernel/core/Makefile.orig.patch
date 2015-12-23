@@ -1,0 +1,28 @@
+--- Makefile.orig	2013-07-17 20:20:40.000000000 +0300
++++ Makefile	2013-10-02 15:29:07.000000000 +0300
+@@ -1,3 +1,8 @@
++#
++# Makefile for the linux kernel.
++#
++
++# Fix-me: marked others for early porting
+ obj-y := core.o irq.o system.o timer.o mt6575_devs.o mt6575_board.o mt6575_dma.o mt6575_boot.o mt6575_gpt.o clock.o mt6575_eint.o mt6575_pm_init.o mt6575_outercache.o mt6575_ca9_power.o mt6575_pwm.o sbchk_base.o
+ #obj-y := core.o irq.o system.o timer.o mt6575_devs.o mt6575_board.o mt6575_gpt.o clock.o mt6575_dma.o mt6575_eint.o mt6575_gpio.o mt6575_outercache.o mt6575_ca9_power.o mt6575_pwm.o
+ obj-y += mt_rfkill.o
+@@ -38,9 +43,16 @@
+ ifeq ($(MTK_BT_SUPPORT), yes)
+ # MTK COMBO chip or not
+ ifeq ($(CONFIG_MTK_COMBO),)
++# LuckAs enable
+ obj-y += mt_bt.o
++# LuckAs end
++endif
+ endif
++# LuckA add
++ifeq ($(BCM_WLAN_SUPPORT), yes)
++obj-y += board-broadcom-wifi.o
+ endif
++# LuckAs end
+ 
+ ccflags-y += -I$(MTK_PATH_PLATFORM)/drivers/power \
+              -I$(MTK_PATH_SOURCE)/drivers/wdk

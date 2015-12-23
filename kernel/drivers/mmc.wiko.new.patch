@@ -1,0 +1,16 @@
+diff -ruN mmc/card/modules.builtin mmc.wiko/card/modules.builtin
+--- mmc/card/modules.builtin	2013-11-19 12:14:07.410140004 +0200
++++ mmc.wiko/card/modules.builtin	1970-01-01 03:00:00.000000000 +0300
+@@ -1 +0,0 @@
+-kernel/drivers/mmc/card/mmc_block.ko
+diff -ruN mmc/core/modules.builtin mmc.wiko/core/modules.builtin
+--- mmc/core/modules.builtin	2013-11-19 12:14:07.420156061 +0200
++++ mmc.wiko/core/modules.builtin	1970-01-01 03:00:00.000000000 +0300
+@@ -1 +0,0 @@
+-kernel/drivers/mmc/core/mmc_core.ko
+diff -ruN mmc/modules.builtin mmc.wiko/modules.builtin
+--- mmc/modules.builtin	2013-11-19 12:14:07.440370692 +0200
++++ mmc.wiko/modules.builtin	1970-01-01 03:00:00.000000000 +0300
+@@ -1,2 +0,0 @@
+-kernel/drivers/mmc/card/mmc_block.ko
+-kernel/drivers/mmc/core/mmc_core.ko
